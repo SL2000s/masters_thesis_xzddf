@@ -1,9 +1,0 @@
-[submodule "openfhe-development-xzddf/third-party/cereal"]
-	path = openfhe-development-xzddf/third-party/cereal
-	url = https://github.com/SL2000s/openfhe-development-xzddf.git
-[submodule "openfhe-development-xzddf/third-party/google-benchmark"]
-	path = openfhe-development-xzddf/third-party/google-benchmark
-	url = https://github.com/google/benchmark/tree/e451e50e9b8af453f076dec10bd6890847f1624e
-[submodule "openfhe-development-xzddf/third-party/gperftools"]
-	path = openfhe-development-xzddf/third-party/gperftools
-	url = https://github.com/gperftools/gperftools/tree/c1d546d7b22cc503f37e9a6efa1d249be60243a3
