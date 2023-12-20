@@ -1,0 +1,3 @@
+[submodule "openfhe-development-xzddf"]
+	path = openfhe-development-xzddf
+	url = https://github.com/SL2000s/openfhe-development-xzddf.git
