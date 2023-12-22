@@ -57,11 +57,11 @@ int main() {
 
     BINFHE_PARAMSET paramsets[] = {STD128, STD128, STD128_LMKCDEY, STD128, STD192, STD192, STD192, STD192};
     std::vector<BINFHE_METHOD> methods = {AP, GINX, LMKCDEY, XZDDF, AP, GINX, LMKCDEY, XZDDF};
-    
+
     for (test_i=0; test_i < methods.size(); ++test_i) {
         method = methods[test_i];
         paramset = paramsets[test_i];
-    
+
         for (i = 0; i < nr_tests; ++i) {
             PRINT2("Iteration: ", i);
 
@@ -119,13 +119,13 @@ int main() {
         print_array(times_or, nr_tests);
         std::cout << "Times, AND: " << std::endl;
         print_array(times_and, nr_tests);
-        std::cout << "Times, 10(AND, OR, NOT): " << std::endl;
+        std::cout << "Times, " << nr_operation_iterations << "(AND, OR, NOT): " << std::endl;
         print_array(times_or_and_not, nr_tests);
 
         std::cout << "Average time, KeyGen: " << average_array(times_gen, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, OR: " << average_array(times_or, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, AND: " << average_array(times_and, nr_tests) << " ms." << std::endl;
-        std::cout << "Average time, 10(AND, OR, NOT): " << average_array(times_or_and_not, nr_tests) << " ms." << std::endl;    
+        std::cout << "Average time, " << nr_operation_iterations << "(AND, OR, NOT): " << average_array(times_or_and_not, nr_tests) << " ms." << std::endl;    
 
         std::cout << std::endl << "================" << std::endl << std::endl;
     }
