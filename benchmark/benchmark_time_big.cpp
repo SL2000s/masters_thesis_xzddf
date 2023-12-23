@@ -51,6 +51,7 @@ int main() {
     LWEPlaintext    decr;
     double          elapsed_time;
     double          times_gen[nr_tests];
+    double          times_bootstrap[nr_tests];
     double          times_or[nr_tests];
     double          times_and[nr_tests];
     double          times_or_and_not[nr_tests];
@@ -80,6 +81,14 @@ int main() {
             
             auto ct1 = cc.Encrypt(pk, 1);
             auto ct2 = cc.Encrypt(pk, 0);
+
+            PRINT("  Evaluating single bootstrapping...");
+            TIC(t);
+            ct_res = cc.Bootstrap(ct1);
+            elapsed_time = TOC(t);
+            times_bootstrap[i] = elapsed_time;
+            cc.Decrypt(sk, ct_res, &decr);
+            PRINT4("    Performed single bootstrap in: ", elapsed_time, " ms.        Decryption: ", decr);
 
             PRINT("  Evaluating OR operation...");
             TIC(t);
@@ -115,6 +124,8 @@ int main() {
 
         std::cout << "Times, KeyGen: " << std::endl;
         print_array(times_gen, nr_tests);
+        std::cout << "Times, single bootstrap: " << std::endl;
+        print_array(times_bootstrap, nr_tests);
         std::cout << "Times, OR: " << std::endl;
         print_array(times_or, nr_tests);
         std::cout << "Times, AND: " << std::endl;
@@ -123,12 +134,13 @@ int main() {
         print_array(times_or_and_not, nr_tests);
 
         std::cout << "Average time, KeyGen: " << average_array(times_gen, nr_tests) << " ms." << std::endl;
+        std::cout << "Average time, single bootstrap: " << average_array(times_bootstrap, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, OR: " << average_array(times_or, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, AND: " << average_array(times_and, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, " << nr_operation_iterations << "(AND, OR, NOT): " << average_array(times_or_and_not, nr_tests) << " ms." << std::endl;    
 
         std::cout << std::endl << "================" << std::endl << std::endl;
     }
-       
+
     return 0;
 }
