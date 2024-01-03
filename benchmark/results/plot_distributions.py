@@ -88,30 +88,36 @@ if __name__ == '__main__':
         'XZDDF_STD192': make_dir(labels, XZDDF_192),
     }
 
-
-    for over_name, over_dict in to_plot.items():
-        subplot_rows = ceil(len(test_labels) / 2)
-        subplot_cols = 2
+    subplot_cols = 2
+    subplot_rows = ceil(len(to_plot)/subplot_cols)
+    figs = []
+    axss = []
+    for test_name in test_labels:
         fig, axs = plt.subplots(subplot_rows, subplot_cols)
-        fig.suptitle(f'Time distributions for {over_dict[method_key]} with $\lambda={over_dict[security_key]}$ bits')
-        for i, test_name in enumerate(test_labels):
+        fig.suptitle(f'{test_name}', fontsize=16)
+        figs.append(fig)
+        axss.append(axs)
+    
+    for i, (over_name, over_dict) in enumerate(to_plot.items()):
+        for j, test_name in enumerate(test_labels):
             times = over_dict[tests_key][test_name]
             counts, bins = np.histogram(times)
 
-            r = i // 2
-            c = i % 2
-            axs[r, c].hist(bins[:-1], bins, weights=counts)
-            axs[r, c].set_title(test_name)
-
-        for ax in axs.flat:
-            ax.set(xlabel='Time (ms)', ylabel='#observations')
+            r = i // subplot_cols
+            c = i % subplot_cols
+            ax = axss[j][r, c]
+            ax.hist(bins[:-1], bins, weights=counts)
+            ax.set_title(f'{over_dict[method_key]} ($\lambda = {over_dict[security_key]}$)')
+            ax.set(xlabel='Time (ms)', ylabel='#obs')
             # ax.label_outer()  # Hide x labels and tick labels for top plots and y ticks for right plots.
 
+    if len(to_plot) % subplot_cols:
+        for subplot_col in range(subplot_cols-1, (len(to_plot) % subplot_cols)-1, -1):
+            for axs in axss:
+                axs[subplot_rows-1, subplot_col].set_visible(False)
 
-        if len(test_labels) % 2:
-            axs[subplot_rows-1, subplot_cols-1].set_visible(False)
-
-        plt.tight_layout()
-        #plt.show()
-        plt.savefig(f'figs/{over_name}_distributions.png')
-        plt.close()
+    for i, fig in enumerate(figs):
+        fig.set_figheight(1.9*fig.get_figheight())
+        fig.tight_layout()
+        # fig.show()
+        fig.savefig(f'figs/{filename_fixer(test_labels[i])}_distributions.png')
