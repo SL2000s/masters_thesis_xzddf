@@ -1,3 +1,4 @@
+from math import ceil
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -42,14 +43,39 @@ if __name__ == '__main__':
         'XZDDF_STD192': make_dir(labels, XZDDF_192),
     }
 
-    for over_name, over_dict in to_plot.items():
+    subplot_cols = 2
+    subplot_rows = ceil(len(to_plot)/subplot_cols)
+    fig, axs = plt.subplots(subplot_rows, subplot_cols)
+    fig.suptitle('Batch tests', fontsize=16)
+    for i, (over_name, over_dict) in enumerate(to_plot.items()):
         y_times = over_dict[tests_key]
-        plt.loglog(x, y_times, marker='o')
-        for i, txt in enumerate(y_times):       # write y values at the data points
-            plt.text(x[i], y_times[i], f'{y_times[i]:.2f}', ha='left', va='top')
-        plt.title(f'Batch test for {over_dict[method_key]} ($\lambda={over_dict[security_key]}$ bits)')
-        plt.xlabel('Number of (AND, OR, NOT) operations')
-        plt.ylabel('Average time (ms)')
-        plt.savefig(f'figs/{over_name}_batch.png')
-        #plt.show()
-        plt.close()
+        
+        r = i // subplot_cols
+        c = i % subplot_cols
+        ax = axs[r, c]
+        ax.loglog(x, y_times, marker='o')
+        ax.set_title(f'{over_dict[method_key]} ($\lambda={over_dict[security_key]}$ bits)')
+        ax.set(xlabel='#(AND, OR, NOT)', ylabel='Average time (ms)')
+    fig.set_figheight(1.9*fig.get_figheight())
+    fig.tight_layout()
+
+    # write y values at the data points
+    for i, (over_name, over_dict) in enumerate(to_plot.items()):
+        y_times = over_dict[tests_key]
+        r = i // subplot_cols
+        c = i % subplot_cols
+        for j, (x_val, y_val) in enumerate(zip(x, y_times)):       # write y values at the data points
+            if j == len(x)-1:
+                ha = 'right'
+                va = 'top'
+                x_val *= 0.7
+                y_val *= 1.25
+            else:
+                ha = 'left'
+                va = 'top'
+                x_val *= 1.35
+                y_val *= 1.35
+            axs[r, c].text(x_val, y_val, f'{y_val:.2f}', ha=ha, va=va)
+
+    # fig.show()
+    plt.savefig('figs/batch.png')
