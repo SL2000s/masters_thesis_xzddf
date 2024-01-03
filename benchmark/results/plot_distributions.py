@@ -1,3 +1,4 @@
+from math import ceil
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -87,15 +88,30 @@ if __name__ == '__main__':
         'XZDDF_STD192': make_dir(labels, XZDDF_192),
     }
 
+
     for over_name, over_dict in to_plot.items():
+        subplot_rows = ceil(len(test_labels) / 2)
+        subplot_cols = 2
+        fig, axs = plt.subplots(subplot_rows, subplot_cols)
+        fig.suptitle(f'Time distributions for {over_dict[method_key]} with $\lambda={over_dict[security_key]}$ bits')
         for i, test_name in enumerate(test_labels):
             times = over_dict[tests_key][test_name]
             counts, bins = np.histogram(times)
 
-            plt.hist(bins[:-1], bins, weights=counts)
-            plt.title(f'{test_name} for {over_dict[method_key]} ($\lambda={over_dict[security_key]}$ bits)')
-            plt.xlabel('Time (ms)')
-            plt.ylabel('Number of observations')
-            plt.savefig(f'figs/{over_name}_{filename_fixer(test_name)}.png')
-            plt.close()
-            #plt.show()
+            r = i // 2
+            c = i % 2
+            axs[r, c].hist(bins[:-1], bins, weights=counts)
+            axs[r, c].set_title(test_name)
+
+        for ax in axs.flat:
+            ax.set(xlabel='Time (ms)', ylabel='#observations')
+            # ax.label_outer()  # Hide x labels and tick labels for top plots and y ticks for right plots.
+
+
+        if len(test_labels) % 2:
+            axs[subplot_rows-1, subplot_cols-1].set_visible(False)
+
+        plt.tight_layout()
+        #plt.show()
+        plt.savefig(f'figs/{over_name}_distributions.png')
+        plt.close()
