@@ -11,12 +11,18 @@
 #  define PRINT2(x1, x2) std::cout << x1 << x2 << std::endl
 #  define PRINT3(x1, x2, x3) std::cout << x1 << x2 << x3 << std::endl
 #  define PRINT4(x1, x2, x3, x4) std::cout << x1 << x2 << x3 << x4 << std::endl
+#  define PRINT5(x1, x2, x3, x4, x5) std::cout << x1 << x2 << x3 << x4 << x5 << std::endl
+#  define PRINT6(x1, x2, x3, x4, x5, x6) std::cout << x1 << x2 << x3 << x4 << x5 << x6 << std::endl
 #else
 #  define PRINT(x) do {} while (0)
 #  define PRINT2(x1, x2) do {} while (0)
 #  define PRINT3(x1, x2, x3) do {} while (0)
 #  define PRINT4(x1, x2, x3, x4) do {} while (0)
+#  define PRINT5(x1, x2, x3, x4, x5) do {} while (0)
+#  define PRINT6(x1, x2, x3, x4, x5, x6) do {} while (0)
 #endif
+
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 using namespace lbcrypto;
 
@@ -39,25 +45,27 @@ double average_array(double a[], int sz) {
 
 int main() {
 
-    int             nr_tests = 100;
-    int             nr_operation_iterations = 10;
-    BINFHE_PARAMSET paramset;
-    BINFHE_METHOD   method;
-    uint32_t        test_i;
-    int             i;
-    int             j;
-    TimeVar         t;
-    LWECiphertext   ct_res;
-    LWEPlaintext    decr;
-    double          elapsed_time;
-    double          times_gen[nr_tests];
-    double          times_bootstrap[nr_tests];
-    double          times_or[nr_tests];
-    double          times_and[nr_tests];
-    double          times_or_and_not[nr_tests];
+    uint32_t                nr_tests = 100;
+    std::vector<uint32_t>   nr_operation_iterations = {1, 10, 100, 1000};
+    u_int32_t               early_stops_operation_iterations[] = {nr_tests, nr_tests, MIN(nr_tests, 10), MIN(nr_tests, 3)};
+    BINFHE_PARAMSET         paramset;
+    BINFHE_METHOD           method;
+    uint32_t                test_i;
+    uint32_t                i;
+    uint32_t                j;
+    uint32_t                k;
+    TimeVar                 t;
+    LWECiphertext           ct_res;
+    LWEPlaintext            decr;
+    double                  elapsed_time;
+    double                  times_gen[nr_tests];
+    double                  times_bootstrap[nr_tests];
+    double                  times_or[nr_tests];
+    double                  times_and[nr_tests];
+    double                  times_or_and_not[nr_operation_iterations.size()][nr_tests];
 
-    BINFHE_PARAMSET paramsets[] = {STD128, STD128, STD128_LMKCDEY, STD128, STD192, STD192, STD192, STD192};
-    std::vector<BINFHE_METHOD> methods = {AP, GINX, LMKCDEY, XZDDF, AP, GINX, LMKCDEY, XZDDF};
+    BINFHE_PARAMSET paramsets[] =        {STD128, STD128, STD128_LMKCDEY, STD128, P128T, P128G, STD192, STD192, STD192,  P192T, P192G};
+    std::vector<BINFHE_METHOD> methods = {AP,     GINX,   LMKCDEY,        XZDDF,  XZDDF, XZDDF, AP,     GINX,   LMKCDEY, XZDDF, XZDDF, XZDDF};
 
     for (test_i=0; test_i < methods.size(); ++test_i) {
         method = methods[test_i];
@@ -106,18 +114,24 @@ int main() {
             cc.Decrypt(sk, ct_res, &decr);
             PRINT4("    Performed AND in: ", elapsed_time, " ms.        Decryption: ", decr);
 
-            PRINT("  Evaluating OR, AND, NOT operation...");
-            TIC(t);
-            for (j = 0; j < nr_operation_iterations; ++j) {
-                ct2 = cc.EvalBinGate(OR, ct1, ct2);
-                ct2 = cc.EvalBinGate(AND, ct1, ct2);
-                ct2 = cc.EvalNOT(ct2);                  // no bootstrapping
+            PRINT3("  Starting ", nr_operation_iterations.size(), " batch tests");
+            for (j=0; j < nr_operation_iterations.size(); ++j) {
+                if (i >= early_stops_operation_iterations[j]) {
+                    continue;
+                }
+                PRINT5("  Batch test ", j, ": Evaluating ", nr_operation_iterations[j], "(OR, AND, NOT) operations...");
+                TIC(t);
+                for (k = 0; k < nr_operation_iterations[j]; ++k) {
+                    ct2 = cc.EvalBinGate(OR, ct1, ct2);
+                    ct2 = cc.EvalBinGate(AND, ct1, ct2);
+                    ct2 = cc.EvalNOT(ct2);                  // no bootstrapping
+                }
+                ct_res = ct2;
+                elapsed_time = TOC(t);
+                times_or_and_not[j][i] = elapsed_time;
+                cc.Decrypt(sk, ct_res, &decr);
+                PRINT6("    Performed ", nr_operation_iterations[j] ," OR, AND, NOT in: ", elapsed_time, " ms.        Decryption: ", decr);
             }
-            ct_res = ct2;
-            elapsed_time = TOC(t);
-            times_or_and_not[i] = elapsed_time;
-            cc.Decrypt(sk, ct_res, &decr);
-            PRINT4("    Performed OR, AND, NOT in: ", elapsed_time, " ms.        Decryption: ", decr);
         }
 
         std::cout << std::endl << "======== Results of test nr. " << test_i << " ========" << std::endl << std::endl;
@@ -130,14 +144,18 @@ int main() {
         print_array(times_or, nr_tests);
         std::cout << "Times, AND: " << std::endl;
         print_array(times_and, nr_tests);
-        std::cout << "Times, " << nr_operation_iterations << "(AND, OR, NOT): " << std::endl;
-        print_array(times_or_and_not, nr_tests);
+        for (i=0; i < nr_operation_iterations.size(); ++i) {
+            std::cout << "Times, " << nr_operation_iterations[i] << "(AND, OR, NOT): " << std::endl;
+            print_array(times_or_and_not[i], early_stops_operation_iterations[i]);
+        }
 
         std::cout << "Average time, KeyGen: " << average_array(times_gen, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, single bootstrap: " << average_array(times_bootstrap, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, OR: " << average_array(times_or, nr_tests) << " ms." << std::endl;
         std::cout << "Average time, AND: " << average_array(times_and, nr_tests) << " ms." << std::endl;
-        std::cout << "Average time, " << nr_operation_iterations << "(AND, OR, NOT): " << average_array(times_or_and_not, nr_tests) << " ms." << std::endl;    
+        for (i=0; i < nr_operation_iterations.size(); ++i) {
+            std::cout << "Average time, " << nr_operation_iterations[i] << "(AND, OR, NOT): " << average_array(times_or_and_not[i], early_stops_operation_iterations[i]) << " ms." << std::endl;    
+        }
 
         std::cout << std::endl << "================" << std::endl << std::endl;
     }
