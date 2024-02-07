@@ -1,0 +1,70 @@
+Fully Homomorphic Encryption (FHE) was for a long time seen as the holy grail of cryptography. It was mentioned by Rivest et al. already in 1978 \cite{cite:first_mention_fhe}, but its capability of performing arbitrary computations on encrypted data, without the need to decrypt it first, seemed to be impossible for a long time. However, in 2009, Gentry proved the opposite when he published the first FHE scheme in his PhD thesis \cite{cite:gentry1}. Since then, the research about FHE has exploded, and in 2022, the Gödel Prize was awarded to three FHE  researchers for their work.
+
+Almost all existing FHE schemes are noise-based, which means that each ciphertext contains some noise. The noise is an essential part of the encryption since this is what makes the scheme secure, but if the noise becomes too big, the decryption will fail. When performing computations on encrypted data homomorphically, the noise increases, and at some point, the ciphertext needs to be refreshed so that the decryption does not fail if further homomorphic operations are performed.
+
+The technique that is used for doing this refreshing, i.e. reducing the noise, is both simple and elegant. Since FHE schemes can compute any function on a ciphertext, one just computes a second layer of encryption and then evaluates the decryption function homomorphically (see Figure \ref{fig:bs_tikz} for an illustration of the process). This technique is called bootstrapping. Although a beautiful solution in theory, bootstrapping turns out to be quite inefficient in practice, at least for all known FHE schemes today.
+
+% In a recent paper, Xiang et al. \cite{cite:fast_bootstrap_crypto23} propose a new algorithm for doing bootstrapping more efficiently than previous techniques. We will call the new algorithm XZDDF, after the authors, and this thesis will be about the XZDDF bootstrapping, but also about bootstrapping and fully homomorphic encryption in general.
+
+In a recent paper, Xiang et al. \cite{cite:fast_bootstrap_crypto23} propose a new algorithm for doing bootstrapping more efficiently than previous techniques. We will call the new algorithm XZDDF, after the authors, and this thesis will be about the XZDDF bootstrapping. We will learn about the theory behind the algorithm and then implement it in a popular open-source FHE library. On the way, we will also learn about bootstrapping and fully homomorphic encryption in general.
+
+%RSA is homomorphic for the addition operation (\cite{cite:RSA}) (1978). Also ElGamal (\cite{cite:ElGamal})
+%https://eprint.iacr.org/2022/1602.pdf
+
+%Fast BS paper
+%"As bootstrapping is the central component for almost all existing FHEs and is much more complex than other elementary operations, it has become the main efficiency bottleneck in practical implementations."
+
+%recently has been subject to intense research, with many interesting applications such as providing privacy when using third-party cloud services to do computations on data.
+
+%FHE has a lot of interesting applications such as providing privacy when using third-party cloud services to do computations on data.
+
+%FHE was introduced by Rivest, Adleman, and Dertouzos [1] in 1978. https://eprint.iacr.org/2022/1602.pdf (\cite{cite:QianFHE})
+%holy grail until 2009, when Gentry proposed the first fully
+%homomorphic encryption scheme in his PhD thesis [2].
+
+%Holy grail:
+%https://www.cs.utexas.edu/~dwu4/papers/XRDSFHE.pdf
+%https://dl.acm.org/doi/pdf/10.1145/3561800
+
+%There are several different approaches and each has its bootstrapping technique with its advantage -- some can encrypt many bits of data in each round, some have low latency ... high throughput...
+
+%Qian:
+%Fully Homomorphic Encryption (FHE) has been an area of intense research, promising the capability of performing arbitrary computations on encrypted data without the need for decryption. Despite its transformative potential, a significant barrier to its practical deployment has been the computational inefficiency associated with bootstrapping, a necessary step to reduce noise and refresh ciphertexts. This thesis aims to conduct a comprehensive survey of existing bootstrapping techniques within the realm of FHE and to rigorously evaluate the security gains and losses introduced by the novel proposal "Fast Blind Rotation for Bootstrapping FHEs, CRYPTO 2023."
+
+\section{Motivation}
+
+FHE does not only contain a lot of beautiful mathematics, but it also has several interesting real-life applications. One example is when letting a third party, such as a cloud service or a fog network, do computations on private data. With FHE, these computations can be performed without compromising the privacy of the data.
+
+A practical example of this is when a machine learning model, e.g. a neural network, is trained on an external supercomputer. If using FHE, one can upload the training data in an encrypted form. Then, the third party can do computations as usual, i.e. it can train the machine learning model, but it does not what it is computing or what the training data is. In this way, sensitive data, such as patient data or bank credentials, can also be used, without revealing it to the third party.
+
+Despite its transformative potential, FHE is still not used much in practice. The main reason for this is the inefficiency of the bootstrapping, resulting in too slow homomorphic computations. Finding an efficient bootstrapping algorithm is important to be able to use FHE more in practice. This is why bootstrapping was chosen as the main topic in this thesis.
+
+
+%\section{Applications}
+%\cite{cite:QianFHE} chapter VII-IX
+%\subsection{Machine Learning}
+%\cite{cite:tfhe_guide}: TFHE good for machine learning (functional circuit)
+%Applications:
+%ML: \url{https://www.youtube.com/watch?v=nL2TUznAMcw&ab_channel=Zama}
+%\subsection{Fog Computing}
+%\subsection{Cloud Computing}
+
+%\section{Problem Statement}
+
+\section{Goals}
+
+The main goal of this thesis is to analyze and implement the XZDDF algorithm. The underlying mathematics will be studied and presented. In case of any flaws in the algorithm, the goal is to solve these so that the algorithm can be implemented. Then, we aim to test the efficiency of the implementation and compare it with the theoretical time complexity of the algorithm. On the way, FHE schemes and older bootstrapping techniques will be studied as well to get a deeper understanding of FHE in general.
+
+
+\section{Scope}
+This thesis primarily focuses on the theory of the XZDDF algorithm that is needed for implementing it. The thesis will therefore not focus on other aspects of the algorithm such as its security and how the noise grows when performing homomorphic operations. For these things, we refer to the original paper by Xiang et al.~\cite{cite:fast_bootstrap_crypto23} instead.
+
+
+\section{Contributions}
+
+This thesis contains theory introducing the reader to the field of FHE and bootstrapping. It also contains new results about XZDDF bootstrapping. Firstly, it announces a problem with the rotation polynomial in the original XZDDF algorithm, and secondly, it proposes a solution to the problem in a special case, when doing Boolean operations with binary messages. At last, an implementation of the solution was programmed and integrated into the \texttt{OpenFHE} library. The implementation works well but is not as fast as expected from the theoretical results about the time complexity of the algorithm.
+
+
+\section{Structure of the Thesis}
+
+In Chapter \ref{sec:preliminaries}, some cryptographic notations and terms are introduced. The next chapter is about FHE and bootstrapping in general. Then, in Chapter \ref{sec:xzddf_intro}, the XZDDF bootstrapping is introduced. The following chapter contains a correction of an error in the original XZDDF algorithm while the last two chapters contain the results of the implementation and conclusions that can be drawn from the project. In the end, there are two appendices. The first one contains theory about a few common FHE schemes, and the second appendix shows figures from the benchmarking of the implementation.

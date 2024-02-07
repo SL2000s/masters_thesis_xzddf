@@ -1,0 +1,27 @@
+Although the XZDDF algorithm is faster in theory, the implementation in this project did not perform better than GINX and LMKCDEY when doing the bootstrapping. The XZDDF key generation, on the other hand, performed better, beating all algorithms except the optimized 128-bit secure LMKCDEY. One conclusion that can be drawn from this project is that the implementation of the XZDDF algorithm most likely can be optimized more so that it beats all algorithms in bootstrapping, just as it theoretically should.
+
+Future work on this topic would be to optimize the XZDDF implementation available on \texttt{GitHub} and to verify that the implementation is indeed secure to use. Moreover, the problem related to the rotational polynomial, explained in Chapter \ref{sec:xzddf_corr}, needs to be solved for the general case, and not only for Boolean operations on binary messages.
+
+Another area, that was not investigated in this thesis, is the theoretical security of the XZDDF algorithm. Since XZDDF is a new algorithm, based on the $\mathsf{NTRU}$ problem instead of the $\mathsf{RLWE}$ problem, it could be interesting in the future to see if any new kinds of attacks can be made on it.
+
+From a broader perspective, a conclusion that can be drawn from this project is that, although FHE schemes contain a lot of beautiful mathematics, all existing algorithms remain inefficient. Even if the XZDDF implementation can be optimized so that the bootstrapping time is reduced, the execution time for Boolean operations will still be in the magnitude of around 100 milliseconds on today's personal computers, which is far too slow to be of practical use. The bootstrapping in FHE needs to be further developed.
+
+I believe that bootstrapping will continue to be a hot topic in the research about FHE, having interesting applications in other hot research areas such as AI and machine learning. Considering the fact that Gentry's first implementation for bootstrapping took 30 minutes \cite{cite:gentry_impl}, and we already can do the bootstrapping in about 100 milliseconds, I think that bootstrapping still has the potential to become even more efficient. Hopefully, we can soon see FHE being used in practice by cloud services and other third parties.
+
+
+
+
+%One final note is that it would also be interesting to investigate the theoretical security of the XZDDF algorithm. For example, 
+
+
+
+
+%\section{Conclusions}
+%\section{Future Work}
+%\cite{cite:QianFHE} (end): "There is still a gap between theoretical bounds and the real noise growth, which increases the complexity of parameter selection. "
+
+%Optimize Github code...
+
+%Fix P128T etc problem
+
+%Find a solution to XZDDF bootstrapping in pke, i.e. when not binary operations...

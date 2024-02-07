@@ -1,0 +1,147 @@
+As seen above, bootstrapping refreshes FHE ciphertexts by evaluating their decryption algorithm homomorphically. In Appendix \ref{sec:fhe_schemes}, we also see that most of the existing FHE schemes decrypt by computing a function $$g(\langle \mathbf{c}, \mathbf{s} \rangle  \mod q) = g(\sum_{i=1}^nc_is_i \mod q ),$$ where $\mathbf{c} \in \mathbb{Z}_q^n$ is the ciphertext, $\mathbf{s} \in \mathbb{Z}_q^n$ is the private key, and $g$ is a function that in some way uses the result of the scalar product to decrypt the ciphertext.
+
+The naive approach of doing bootstrapping is to simply compute $g$ homomorphically as in Algorithm \ref{alg:bootstrap}. However, the modulo operation is computationally expensive \cite{cite:fast_bootstrap_crypto23}. Therefore, in practice, one needs to modify the bootstrapping so that the execution time is reduced. There are several ways of doing so, and one is based on so-called blind rotation. This section will give an overview of how this way of doing bootstrapping usually works. In the next chapter, we introduce a new, faster blind rotation algorithm developed by Xiang et al. \cite{cite:fast_bootstrap_crypto23}.
+
+The main idea of doing bootstrapping with blind rotation is to transform the noisy ciphertext to a ciphertext in another scheme, where the modulo operations can be computed cheaper. More specifically, one wants to transform the ciphertext to a ring-based encryption system, where the ring $\mathcal{R} = \mathbb{Z}[X]/(X^N+1)$ is constructed so that $q=2N$. In this way, the order of $X \in \mathcal{R}$ is $\operatorname{ord}_{\mathcal{R}} (X) =  q$, which means that that the computations modulo $q$ can be computed easily in the exponent:
+$$X^{ \sum_i c_i s_i  } =
+X ^ {(\sum_i c_i s_i \operatorname{mod} q) + kq} =
+X^{\sum_i c_i s_i \operatorname{mod} q} \cdot (X^q)^k =
+X^{\sum_i c_i s_i \operatorname{mod} q}.$$
+%To read the exponent $X^{ \sum_i c_i s_i  }$, i.e. to get the result of the modulo computation, one multiplies the rotation polynomial $r(X) = \sum_{i=0}^{q-1} iX^{-i}$, and read the coefficient of the constant term:
+%$$ \sum_i c_i s_i \equiv \operatorname{coeff}_0 \left(r(X) \cdot X^{ \sum_i c_i s_i  } \right)  \mod q $$
+Then, it is just to read the exponent of $X^{ \sum_i c_i s_i  }$ to get the result of the modulo computation. 
+
+Usually, bootstrapping using blind rotation consists of three steps:
+\begin{enumerate}[font=\bfseries]
+    \item \textbf{Blind rotation} \\ Transforms the first-layer ciphertext to a ring-based ciphertext. 
+    \item \textbf{Extraction} \\ Transforms the ring-based ciphertext back to the first-layer encryption again.
+    \item \textbf{Key switching} \\ Switches the new first-layer key back to the original key.
+\end{enumerate}
+
+There are two common bootstrapping algorithms that are usually used, and they differ mainly in how the blind rotation is performed \cite{cite:hal_bootstrap_intro}. One performs blind rotation using the AP algorithm \cite{cite:ap}, while the other uses the GINX algorithm \cite{cite:ginx}.
+
+Section \ref{sec:ap} and \ref{sec:ginx} below give a short introduction to these algorithms. We refer to \cite{cite:ap} and \cite{cite:ginx} for more details about how AP and GINX work.
+
+Usually, AP needs a larger evaluation key than GINX. GINX is faster for binary and ternary secrets, but slower for larger secrets \cite{cite:hal_bootstrap_intro}.
+
+In Chapter \ref{sec:xzddf_intro}, we present a new algorithm from Xiang et al. \cite{cite:fast_bootstrap_crypto23}, which both has a small evaluation key and is fast for large secrets. Another algorithm, that also beats AP and GINX in memory and time complexity, is called LMKCDEY \cite{cite:lmkcdey_le_et_al_better_ap_ginx}.
+
+\subsection{AP Blind Rotation}\label{sec:ap}
+The AP method for doing blind rotation relies on decompositions of $a_i=\sum_j a_{i,j}B^j$ in a base $B$. All possible values of $a_{i,j}s_i \in \mathbb{Z}_q$, where $\mathbf{s}=(s_0, \dots, s_{n-1}) \in \mathbb{Z}_q^n$ is the private key, are pre-computed and encrypted, and then stored in the blind rotation evaluation key $BRK^{\text{AP}}$.
+
+Algorithm \ref{alg:ap_brkgen} shows how the evaluation key is generated, while Algorithm \ref{alg:ap} shows how the blind rotation is performed, where the operator $\otimes$ is the external product between RLWE ciphertexts and RGSW ciphertexts, defined by for example Alperin-Sheriff and Peikert \cite{cite:ap}. The output $\mathsf{ACC}$ is essentially an RLWE ciphertext of the decryption of the inputted LWE ciphertext $c = (\mathbf{a}, b)$.
+
+\renewcommand{\Comment}[2][.35\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{AP.BRKGen}$}\label{alg:ap_brkgen}
+\begin{algorithmic}
+\Require
+  \State $\mathbf{s} \in \mathbb{Z}_q^n$ \Comment{secret key}
+  \State $B \in \mathbb{Z}_q$ \Comment{basis}  
+\Ensure $BRK^{\text{AP}}$ \Comment{evaluation key}  
+  \For{$i=0 \;..\; (n-1)$}
+    \For{$j=0 \;..\; (\log_B(q) - 1)$}
+      \For{$v=0 \;..\; B$}
+        \State $BRK_{i,j,v}^{\text{AP}} \gets \operatorname{RGSW}_{\mathbf{z}}(X^{vB^js_i})$   \Comment{RGSW encryption}
+      \EndFor
+    \EndFor  
+  \EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\renewcommand{\Comment}[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{AP.BREval}$}\label{alg:ap}
+\begin{algorithmic}
+\Require
+  \State $f \in \mathcal{R}_Q$
+  \State $c = (\mathbf{a}, b) \in \mathbb{Z}_q^n \times \mathbb{Z}_q$ \Comment{LWE ciphertext}
+  \State $BRK^{\text{AP}}$
+  \State $B \in \mathbb{Z}_q$ \Comment{basis}  
+\Ensure $\mathsf{ACC}$ \Comment{accumulator}  
+  \State $Y \gets X^{\frac{2N}{q}} \in \mathcal{R}_Q$ \Comment{$\implies \operatorname{ord}_{\mathcal{R}_Q}(Y) = q$}
+  \State $\mathsf{ACC} \gets (0, Y^{-b} \cdot f) \in \mathcal{R}_Q \times \mathcal{R}_Q$
+  \For{$i=0 \;..\; (n-1)$}
+    \For{$j=0 \;..\; (\log_B(q) - 1)$}
+      \State $a_{i,j} \gets \lfloor a_i / B^j \rfloor \mod B$
+      \State $\mathsf{ACC} \gets \mathsf{ACC} \otimes BRK_{i,j,a_{i,j}}^{\text{AP}} $ \Comment{$\otimes$ is the external product}
+    \EndFor  
+  \EndFor
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+\subsection{GINX Blind Rotation}\label{sec:ginx}
+In the GINX method for doing blind rotation, the elements of the private key $\mathbf{s}=(s_0, \dots, s_{n-1}) \in \mathbb{Z}_q^n$ are decomposed as $s_i = \sum_{j=0}^{|U|-1} u_j \cdot s_{i,j}$ where $s_{i,j} \in \{0,1\}$ and $U = \{u_0, \dots, u_{|U|-1}\}$ is a public set. All $s_{i,j}$ are then encrypted and stored in the blind rotation evaluation key $BRK^{\text{GINX}}$.
+
+Algorithm \ref{alg:ginx_brkgen} shows how the evaluation key is generated, while Algorithm \ref{alg:ginx} shows how the blind rotation is performed. Just as for the AP blind rotation, the operator $\otimes$ is the external product between RLWE ciphertexts and RGSW ciphertexts.
+%The output $\mathsf{ACC}$ is essentially an RLWE ciphertext of the decryption of the inputted LWE ciphertext $c = (\mathbf{a}, b)$.
+
+
+% from \cite{lmkcdey....}
+\renewcommand{\Comment}[2][.35\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{GINX.BRKGen}$}\label{alg:ginx_brkgen}
+\begin{algorithmic}
+\Require
+  \State $\mathbf{s} \in \mathbb{Z}_q^n$ \Comment{secret key}
+  \State $U \subset \mathbb{Z}_q$ %\Comment{Chosen s.t. $\exists s_j \subset U: $}
+\Ensure $BRK^{\text{GINX}}$ \Comment{evaluation key}  
+  \For{$i=0 \;..\; (n-1)$}
+      \State $s_{i,j} \gets \operatorname{Solve}\left(s_i = \sum_{j=0}^{|U|-1} u_j \cdot s_{i,j} \text{ \;\; s.t. } s_{i,j} \in \{0,1\}\right)$
+    \For{$j=0 \;..\; (|U|-1)$}
+      \State $BRK_{i,j}^{\text{GINX}} \gets \operatorname{RGSW}_{\mathbf{z}}(s_{i,j})$   \Comment{RGSW encryption}
+      
+    \EndFor  
+  \EndFor
+\end{algorithmic}
+\end{algorithm}
+
+
+% from \cite{lmkcdey....}
+\renewcommand{\Comment}[2][.4\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{GINX.BREval}$}\label{alg:ginx}
+\begin{algorithmic}
+\Require
+  \State $f \in \mathcal{R}_Q$
+  \State $c = (\mathbf{a}, b) \in \mathbb{Z}_q^n \times \mathbb{Z}_q$ \Comment{LWE ciphertext}
+  \State $BRK^{\text{GINX}}$
+\Ensure $\mathsf{ACC}$ \Comment{accumulator}  
+  \State $Y \gets X^{\frac{2N}{q}} \in \mathcal{R}_Q$ \Comment{$\implies~ \operatorname{ord}_{\mathcal{R}_Q}(Y) = q$}
+  \State $\mathsf{ACC} \gets (0, Y^{-b} \cdot f) \in \mathcal{R}_Q \times \mathcal{R}_Q$
+  \For{$i=0 \;..\; (n-1)$}
+    \For{$j=0 \;..\; (|U| - 1)$}
+      \State $\mathsf{ACC} \gets \mathsf{ACC} + (Y^{a_iu_j}-1) \cdot (\mathsf{ACC} \otimes BRK_{i,j}^{\text{GINX}}) $ %\Comment{$\otimes$ is the external product}
+    \EndFor  
+  \EndFor
+\end{algorithmic}
+\end{algorithm}
+
+
+
+% OLD
+% We will now describe each step in detail.
+
+% \section{Blind Rotation}
+
+% AP: large key
+% GINX: faster for binary/ternary secrets \cite{cite:hal_bootstrap_intro}, slower for larger secrets. Smaller key.
+
+% \subsection{AP Blind Rotation}
+
+% The AP method for doing blind rotations relies on decompositions of $a_i=\sum_j a_{ij}B^j$ in a base $B$. All possible values of $a_{ij}s_i \in \mathbb{Z}_q$ are precomputed and encrypted, stored in the evaluation key. 
+
+% \subsection{GINX Blind Rotation}
+
+% In the GINX method for doing blind rotation, the elements of the private key are decomposed as $s_i = \sum_{u \in U}s_{i,u}u$ for some public set $U$, where $s_{i,u} \in \{0,1\}$. Then, all $s_{i,u}$ are encrypted and stored in the evaluation key. 
+
+% \subsection{Lee et al. \cite{cite:le_et_al_better_ap_ginx}}
+
+% Rely on automorphisms.
+
+% \section{Key Switching}
+
+% \section{Extraction}

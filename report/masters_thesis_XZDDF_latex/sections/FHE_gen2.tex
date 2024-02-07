@@ -1,0 +1,178 @@
+The second-generation FHE schemes are based on the $\mathsf{LWE}$ problem and the $\mathsf{RLWE}$ problem. The development of schemes in this generation was, according to Marcolla et al. \cite{cite:QianFHE}, started by Brakerski and Vaikuntanathan, who published some initial papers \cite{cite:bv_lwe} and \cite{cite:bv_rlwe} about FHE with $\mathsf{LWE}$ and $\mathsf{RLWE}$, respectively. The subsequent research and development of these schemes finally led to the so-called BGV and B/FV schemes, which are nowadays implemented by many open-source FHE libraries, such as HElib \cite{cite:HElib} and OpenFHE \cite{cite:openFHE}.
+
+The initial paper \cite{cite:bv_lwe} about $\mathsf{LWE}$-based FHE was extended to a new version \cite{cite:bv_lwe_2014} in 2014. This section will start by presenting some of the main ideas from that paper before the actual BGV scheme is described. Finally, some notes about the B/FV scheme will be made.
+
+
+
+\subsection{BV Scheme}\label{sec:bv}
+
+The $\mathsf{LWE}$-based FHE scheme presented by Brakerski and Vaikuntanathan \cite{cite:bv_lwe_2014} is called the BV scheme. We will now describe how the encryption and decryption work in the BV scheme. %, since BGV and other second-generation schemes encrypt and decrypt similarly.
+
+To get the encryption $c$ of a message $m \in \mathbb{Z}_2$, one computes
+$$c = (\mathbf{a}, b = \langle \mathbf{a}, \mathbf{s} \rangle +2e + m) \in \mathbb{Z}_q^n \times \mathbb{Z}_q,$$
+where $\mathbf{a}$ is a public vector, $\mathbf{s}$ is a secret vector and $e$ is a random noise from an error distribution $\chi$.
+
+The ciphertext $c$ can then be decrypted as 
+$$m' = (b - \langle \mathbf{a}, \mathbf{s} \rangle \mod{q}) \mod{2}.$$
+If the error term is small enough, we can assume that $e < q/2$, and then we see that the decryption succeeds because
+\begin{align*}
+m' &= (b - \langle \mathbf{a}, \mathbf{s} \rangle \mod{q}) \mod{2} \\
+&= (2e + m \mod{q}) \mod{2} \\
+&= 2e + m \mod 2 \\
+&= m.
+\end{align*}
+
+One advantage of the BV scheme is that it, in contrast to the FHE schemes in the first generation, does not rely on the $\mathsf{SSSP}$ problem \cite{cite:QianFHE}. In fact, it only relies on the $\mathsf{LWE}$ problem, which, as we have seen, can be reduced to the shortest vector problem ($\mathsf{SVP}$) on arbitrary lattices \cite{cite:bv_lwe}.
+
+There is also an $\mathsf{RLWE}$-based\footnote[1]{To be precise, it is based on the so-called $\mathsf{PLWE}$ problem, but this problem relies on $\mathsf{RLWE}$ problem, i.e. if $\mathsf{RLWE}$ can be solved, $\mathsf{PLWE}$ can also be solved \cite{cite:bv_rlwe}.} version of the BV scheme, presented by Brakerski and Vaikuntanathan \cite{cite:bv_rlwe}. %Then the ciphertexts and keys belong are elements in a ring $\mathcal{R}_q = \mathbb{Z}_q / \langle f(x) \rangle$ instead.
+
+
+
+\subsection{BGV Scheme}\label{sec:bgv}
+
+In 2014, Brakerski, Gentry, and Vaikuntanathan \cite{cite:bgv} introduced a new levelled fully homomorphic encryption scheme. It is called the BGV scheme, and the level of computations it can handle is set by the user and depends on the purpose, i.e. how deep the circuits to evaluate will be. The purpose of this structure is to avoid bootstrapping. However, there are also bootstrapping techniques for BGV, so that the scheme becomes fully homomorphic. Brakerski et al. \cite{cite:bgv} present one bootstrapping technique for the scheme. In Chapter \ref{sec:xzddf_intro} and \ref{sec:xzddf_corr}, we present another bootstrapping technique, based on a technique from Xiang et al. \cite{cite:fast_bootstrap_crypto23}, that can be used for BGV.
+
+There are two versions of the BGV scheme -- one based on the $\mathsf{LWE}$ problem and one based on the $\mathsf{RLWE}$ problem. The $\mathsf{RLWE}$-based is more efficient and usually the one implemented in open-source FHE libraries \cite{cite:QianFHE}.
+
+
+We will now present a simplified version of the original BGV scheme in Brakerski et al. \cite{cite:bgv}. The simplified scheme will consist of the algorithms $$\mathcal{E}_{BGV} = (\mathsf{BGV.Setup, BGV.KeyGen, BGV.Enc, BGV.Dec, BGV.Eval}),$$ and our notations and procedures are based on the BGV presentations in Brakerski et al. \cite{cite:bgv} and Marcolla et al. \cite{cite:QianFHE}. See Algorithm \ref{alg:bgv_setup} -- \ref{alg:bgv_eval} for the pseudocode.
+
+
+$\mathsf{BGV.Setup}$ is described in Algorithm \ref{alg:bgv_setup}. $L$ is the level of the scheme, i.e. the maximum depth of an arithmetic circuit that the scheme can evaluate without bootstrapping. %$f(x)$ is a polynomial of degree $d$. It can for example be $f(x) = x^d + 1$ as in \cite{cite:QianFHE}.
+
+The output of $\mathsf{BGV.Setup}$ is a list, or a ladder, of parameter sets -- one for each level in the arithmetic circuit. The main idea of Brakerski et al. \cite{cite:bgv} to achieve a levelled FHE scheme is to decrease the modulo $Q_j$ between each homomorphic operation. In this way, the size of the error also decreases, so that it does not escalate when performing many multiplications. For each modulo, there is a parameter set for encrypting and decrypting. Note that in our simplified version, $\mathcal{R}, N, n$ and $\chi$ are the same at all levels of the ladder, but this is not necessary.
+
+\renewcommand{\Comment}[2][.42\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{BGV.Setup}$}\label{alg:bgv_setup}
+\begin{algorithmic}
+\Require
+  \State $\lambda$ \Comment{security parameter}
+  \State $L$ \Comment{number of levels}
+\Ensure $params = \{params_j\}_{j=0}^L$ \Comment{a ladder of parameters}
+  \State $N \gets N(\lambda)$ \Comment{degree of the ring}
+  \State $\mathcal{R} \gets \mathbb{Z}[x]/(X^N+1)$ %\Comment{$f(x)$ has degree $d$}
+  \State $n \gets n(\lambda)$ \Comment{dimension of  the ring}
+  \State $\chi \gets \chi(\lambda)$ \Comment{error distribution over $\mathcal{R}$}
+%  \State $B$ \Comment{Bound on length of elements from $\chi$} 
+  \For{$j=L \;..\; 0$}
+    \State $Q_j \gets Q(\lambda, j, L)$ \Comment{modulo at level $j$}
+    \State $M_j \gets M(\lambda, j, L) = n \cdot \operatorname{polylog}(Q_j)$
+    \State $params_j \gets (\mathcal{R}, n, \chi, Q_j, M_j)$ 
+  \EndFor
+\end{algorithmic}
+\end{algorithm}
+
+In Algorithm \ref{alg:bgv_keygen}, the procedure of generating a public and a private key is presented. The output is a list of key pairs -- one for each circuit level. Algorithm \ref{alg:bgv_enc} and \ref{alg:bgv_dec} then show how to use these keys to encrypt and decrypt.
+
+The correctness of the decryption algorithm can be shown in the following way:
+\begin{align*}
+\mathsf{B}&\mathsf{GV.Dec}(params, sk, \mathbf{c}, j) \\
+&= (\langle \mathbf{c}, \mathbf{s}_j \rangle \mod Q_j) \mod 2 \\
+&= (\langle \mathbf{m} + \mathbf{r}^T \mathbf{A}_j, \mathbf{s}_j \rangle \mod Q_j) \mod 2 \\
+&= (\langle \mathbf{m}, \mathbf{s}_j \rangle + \langle  \mathbf{r}^T \mathbf{A}_j, \mathbf{s}_j \rangle \mod Q_j) \mod 2 \\
+&= (m + \mathbf{r}^T \mathbf{A}_j \mathbf{s}_j \mod Q_j) \mod 2 \\
+&= (m + \mathbf{r}^T (\mathbf{b}_j \cdot 1 - \mathbf{B}_j \mathbf{t}_j ) \mod Q_j) \mod 2 \\
+&= (m + 2 \mathbf{r}^T \mathbf{e}_j \mod Q_j) \mod 2 \\
+&= [\mathbf{r}^T \mathbf{e}_j \text{ is small so } (m + 2 \mathbf{r}^T \mathbf{e}_j) \text{ does not wrap around } Q_j] \\
+&= m + 2 \mathbf{r}^T \mathbf{e}_j \mod 2 \\
+&= m  \\
+\end{align*}
+
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}
+\caption{\;\;$\mathsf{BGV.KeyGen}$}\label{alg:bgv_keygen}
+\begin{algorithmic}[ht]
+\Require
+  \State $\{params_j\}_{j=0}^L$
+\Ensure $(sk, pk)$ \Comment{private and public key pair}
+%  \State $\mu = \theta(\log \lambda + \log L)$ \Comment{A constant}
+  \For{$j=L \; .. \; 0$}
+    \State $\mathbf{t}_j \xleftarrow{\text{s}} \chi^n$
+    \State $\mathbf{s}_j \gets (1, \mathbf{t}_j[0], ..., \mathbf{t}_j[n-1]) \in \mathcal{R}_{Q_j}^{n+1}$
+    \State $\mathbf{B}_j \xleftarrow{\text{s}} \mathcal{U}(\mathcal{R}_{Q_j}^{M_j \times n})$
+    \State $\mathbf{e}_j \xleftarrow{\text{s}} \chi^{M_j}$
+    \State $\mathbf{b}_j \gets \mathbf{B}_j \mathbf{t}_j + 2 \mathbf{e}_j$
+    \State $\mathbf{A}_j \gets (\mathbf{b}_j \; || -\mathbf{B}_j) \in \mathcal{R}_{Q_j}^{M_j \times (n+1)}$
+  \EndFor
+  \State $sk \gets \{\mathbf{s}_j\}_{j=0}^L$
+  \State $pk \gets \{\mathbf{A}_j\}_{j=0}^L$
+\end{algorithmic}
+\end{algorithm}
+
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{BGV.Enc}$}\label{alg:bgv_enc}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $pk$
+  \State $m \in \mathcal{R}_2$
+\Ensure $\mathbf{c}$
+  \State $\mathbf{m} \gets (m, 0, ..., 0) \in \mathcal{R}_{Q_L}^{n+1}$
+  \State $\mathbf{r} \xleftarrow{\text{s}} \mathcal{U}\left(\mathcal{R}_2^{M_L}\right)$
+  \State $\mathbf{c} \gets \mathbf{m} + \mathbf{r}^T \mathbf{A}_L \in \mathcal{R}_{Q_L}^{n+1} $
+\end{algorithmic}
+\end{algorithm}
+
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{BGV.Dec}$}\label{alg:bgv_dec}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $sk$
+  \State $\mathbf{c}$
+  \State $j$  \Comment{level of $\mathbf{c}$} %\Comment{Index of $\mathbf{s}_j$ used for encrypting $\mathbf{c}$}
+\Ensure $m$
+  \State $m \gets (\langle \mathbf{c}, \mathbf{s}_j \rangle \mod Q_j) \mod 2$
+\end{algorithmic}
+\end{algorithm}
+
+To evaluate a function $f$ on some encrypted data, Algorithm \ref{alg:bgv_eval} can be used. Without loss of generality, the algorithm assumes that $f$ is represented by an arithmetic circuit. The additions and multiplications are performed one at a time, and between each operation, the result is refreshed by moving to the next step of the parameter ladder. The refreshing consists of two steps, where a new ciphertext (still encrypting the same plaintext message) is computed in each step. First, it switches the key pair to the next key pair, and then it decreases the modulo under which, the message is encrypted.
+
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{BGV.Eval}$}\label{alg:bgv_eval}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $pk$
+  \State $f$ \Comment{circuit with add. and mult. gates}
+  \State $(\mathbf{c}_0, ..., \mathbf{c}_{l-1})$
+\Ensure $\mathbf{c}' = \mathsf{Enc}(f(\mathsf{Dec}(\mathbf{c}_0), ..., \mathsf{Dec}(\mathbf{c}_{l-1})))$
+  \State \textbf{Function} add($pk, \mathbf{c}_0, \mathbf{c}_1$)
+    \State \;\; $\mathbf{c}_2 \gets \mathbf{c}_0 + \mathbf{c}_1 \mod Q_j$
+    \State \;\; \textbf{Return} $\mathsf{BGV.Eval.Refresh}(\mathbf{c}_2, Q_j, Q_{j-1})$
+  \State \textbf{End Function}
+  \State \textbf{Function} mult($pk, \mathbf{c}_0, \mathbf{c}_1$)
+    \State \;\; $\mathbf{c}_2 \gets $ coefficient vector of $\langle \mathbf{c}_0 \otimes \mathbf{c}_1, \mathbf{x} \otimes \mathbf{x} \rangle$ \;\;\;\;\; // $\otimes$ is the tensor product
+    \State \;\; \textbf{Return} $\mathsf{BGV.Eval.Refresh}(\mathbf{c}_2, Q_j, Q_{j-1})$
+  \State \textbf{End Function}
+  \State \textbf{Function} refresh($\mathbf{c}, Q_j, Q_{j-1}$)
+    \State \;\; $\mathbf{c}_0 \gets \mathsf{SwitchKey}(\mathbf{c}, Q_j)$ \Comment{switch key to $\mathbf{s}_{j-1}$}%, still mod $Q_j$}
+    \State \;\; $\mathbf{c}_1 \gets \mathsf{SwitchMod}(\mathbf{c}_0, Q_j, Q_{j-1})$ \Comment{switch mod to $Q_{j-1}$}%, still key $\mathbf{s}_{j-1}$}
+  \State \textbf{End Function}
+  \State Use $\operatorname{add}()$ and $\operatorname{mult}()$ to compute the circuit $f$ on  $\mathbf{c}_0, ..., \mathbf{c}_{l-1}$ and output the result to $\mathbf{c}'$.
+\end{algorithmic}
+\end{algorithm}
+
+
+%If the level was set too low in $\mathsf{BGV.Setup}$, and the noise has become too large, a bootstrapping must be performed. However, bootstrapping can sometimes also increase the performance, for example, if the circuit to evaluate is very deep.
+
+One final note about the BGV scheme is that Brakerski et al.~\cite{cite:bgv} also present a batching technique, that can be used when having many blocks of encrypted data that should be evaluated with the same function $f$. Batching increases the performance a lot for some types of functions $f$. One example, given by Brakerski et al.~\cite{cite:bgv}, is when deciding whether a word is present or not in a text. If batching the words to one text block, instead of having one block for each word in the text, we do not have to do a lot of $\operatorname{OR}$ operations. To batch messages, Brakerski et al.~\cite{cite:bgv} suggest replacing the plaintext space $\mathcal{R}_2$ with a ring $\mathcal{R}_p$, where $p$ is a prime. The BGV scheme then needs some other modifications as well, see the paper by Brakerski et al. \cite{cite:bgv} for further details.
+
+
+\subsection{B/FV Scheme}\label{sec:bfv}
+% good description in file:///C:/Users/Simon/Documents/skola/master_thesis/sources/bfv%20and%20bgv.pdf s.39/52    978-3-030-77287-1 Protecting Privacy through Homomorphic Encryption (see fast_bs_paper for how to cite)
+
+The BGV scheme was further developed by Fan and Vercauteren to the so-called B/FV scheme \cite{cite:bfv}, and this scheme is also implemented in many open-source FHE libraries. We refer to their paper for more details about how this scheme works.
+
+
+%The scheme is somewhat similar to the BGV scheme, especially in the sense that it performs a refreshment after each multiplication to keep the noise under control. We refer to \cite{cite:bfv} for more details about how this scheme works.
+
+Kim et al. \cite{cite:bgv_vs_bfv} compare optimized versions of the BGV and the B/FV schemes. The conclusions are that the noise grows slower in B/FV and that B/FV is faster for small plaintexts, but that BGV is faster for medium and large plaintexts.

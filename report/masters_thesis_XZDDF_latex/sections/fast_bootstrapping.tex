@@ -1,0 +1,255 @@
+Xiang et al. \cite{cite:fast_bootstrap_crypto23} propose a new way of doing blind rotation, using $\mathsf{NTRU}$-based encryption, instead of $\mathsf{RLWE}$-based encryption, as in AP \cite{cite:ap}, GINX \cite{cite:ginx} and LMKCDEY \cite{cite:lmkcdey_le_et_al_better_ap_ginx}. The result turns out to be both faster and more memory efficient than the other three methods. We will now present how this fast blind rotation works. In this thesis, it will be called XZDDF bootstrapping.
+
+First, let us assume that the first-layer encryption, which is to be refreshed, has the form $(\mathbf{a}, b=\sum_{i=0}^{n-1}a_is_i - \operatorname{noised}(m))$, where $\mathbf{a} = (a_0, ..., a_{n-1}) \in \mathbb{Z}_q^n$ is a public random vector, $\mathbf{s} = (s_0, ..., s_{n-1}) \in \mathbb{Z}_q^n$ is the private key, and $\operatorname{noised}(m)$ is an encoding of the plaintext with some noise $e \in \mathbb{Z}_q$.
+
+As before, we construct a ring $\mathcal{R}_Q = \mathbb{Z}_Q[X]/(X^N+1)$ where $N$ is a power of 2 and $q=2N$ so that the order of $X$ is $q$ and the modulo $q$ operations can be computed for free in the exponent. We then want to compute
+$$X^{\operatorname{noised}(m)} = X^{\sum_{i=0}^{n-1}a_is_i -b \operatorname{\;\;mod} q} = X^{-b} X^{\sum_{i=0}^{n-1}a_is_i},$$
+and extract the exponent $\operatorname{noised}(m)$ by multiplying the rotation polynomial \linebreak $r(X) = \sum_{i=0}^{q-1} iX^{-i}$, and read the coefficient of the constant term:
+$$ \operatorname{noised}(m) = \operatorname{coeff}_0 \left(r(X) \cdot X^{-b} X^{\sum_{i=0}^{n-1}a_is_i}\right)   .$$
+
+Xiang et al. \cite{cite:fast_bootstrap_crypto23} now makes this method more general by introducing looser constraints on $q$ and $N$, allowing us to compute $\operatorname{noised}(m)$ with any pair of $(N, q)$, where $q | 2N$, by just multiplying $2N/q$ in the exponent. In this way, we get
+$$\left(X^{\frac{2N}{q}}\right)^q = X^{\frac{2N}{q}q} = X^{2N} = (X^N-1)(X^N+1)+1 \equiv 1 \mod (X^N+1).$$
+
+This means, that we once again can do modulo $q$ computations for free in the exponent. We can then easily compute
+$$ \operatorname{noised}(m) = \operatorname{coeff}_0 \left(r(X^{\frac{2N}{q}}) \cdot X^{-\frac{2N}{q}b} X^{\frac{2N}{q}\sum_{i=0}^{n-1}a_is_i}\right) .$$
+
+Since $\mathbf{s}$ is private, we do only have access to encryptions $c_i(X) \in \mathcal{R}_Q$ of $X^{s_i}$ under a private key $f(X) \in \mathcal{R}_Q$. To get a ciphertext that encrypts $X^{a_is_i}$, Xiang et al.~\cite{cite:fast_bootstrap_crypto23} applies the automorphism $X \mapsto X^{a_i}$ so that the ciphertext $c_i(X^{a_i})$ encrypts $X^{a_is_i}$.
+
+Firstly, note that the new ciphertext $c_i(X^{a_i})$ is not under the original private key $f(X)$, but under a key $f(X^{a_i})$. Since our goal is to homomorphically compute the product $r(X^{\frac{2N}{q}}) \cdot X^{-\frac{2N}{q}b} X^{\frac{2N}{q}\sum_{i=0}^{n-1}a_is_i}$, we need all encrypted terms to be under the same private key, and therefore, the private keys $f(X^{a_i})$ to $X^{a_is_i}$ need to be switched back to $f(X)$.
+
+Secondly, note that the automorphism works only if $a_i$ is coprime to $2N$, which is not true when $a_i$ is even. The proposed solution from Xiang et al. \cite{cite:fast_bootstrap_crypto23} is to require that $q | N$ instead of $q | 2N$. In this way, one can compute
+$$X^{\frac{2N}{q}a_is_i} = X^{(\frac{2N}{q}a_i+1)s_i-s_i} = X^{w_is_i}X^{-s_i}$$
+instead, where $w_i=\frac{2N}{q}a_i+1$. Since $q|N$, $w_i$ must be odd, so that it is coprime to $2N$ for all $a_i$. Now, what we want to compute has become
+
+\begin{equation}
+    \operatorname{noised}(m) = \operatorname{coeff}_0 \left(r(X^{\frac{2N}{q}}) \cdot X^{-\frac{2N}{q}b} X^{\sum_{i=0}^{n-1}w_is_i} X^{-\sum_{i=0}^{n-1}s_i}\right)
+    \label{eq:noised_m}
+\end{equation}
+
+To solve the key switching problem, Xiang et al. \cite{cite:fast_bootstrap_crypto23} constructs an $\mathsf{NTRU}$-based encryption scheme for the second-layer encryption, designed to switch keys efficiently. The next section describes how this scheme works.
+
+\section{$\mathsf{NTRU}$-Based Encryption}\label{sec:ntru_encr}
+
+Let us begin by defining two parameters $(\tau, \Delta)$:
+\begin{equation*}
+  (\tau, \Delta) :=
+    \begin{cases}
+      \left(1, \left\lfloor \frac{Q}{t} \right\rceil \right), & \text{if $\operatorname{noised}(m) = e + \left \lfloor \frac{q}{t} \right \rceil \cdot m$} \\
+      (t,1), & \text{if $\operatorname{noised}(m) = t \cdot e + m$}\\
+      (1,1), & \text{if $\operatorname{noised}(m) = e + m$}.
+    \end{cases}       
+\end{equation*}
+This means that which parameters to use depends on how $\operatorname{noised}(m)$ is encoded in the first-layer encryption.
+
+Xiang et al. \cite{cite:fast_bootstrap_crypto23} then presents two versions of NTRU encryption -- one scalar version and one vector version. Definition \ref{def:scalar_NTRU} and \ref{def:vector_NTRU} show how these encryptions work.
+
+\begin{definition}[Scalar NTRU encryption]
+    Given the two parameters $(\tau, \Delta)$, the scalar NTRU encryption of a message $u \in \mathcal{R}_Q$ under an invertible private key $f \in \mathcal{R}_Q$, is defined as
+    $$\mathrm{NTRU}_{Q, f, \tau, \Delta}(u) := \tau \cdot g/f + \Delta \cdot u/f \in \mathcal{R}_Q,$$
+    where $f, g \in \mathcal{R}_Q$ are polynomials with small coefficients.
+    \label{def:scalar_NTRU}
+\end{definition}
+
+\begin{definition}[Vector NTRU encryption]
+    Given the parameter $\tau$ and an integer $B \in \mathbb{N}^*$, the vector NTRU encryption of a message $v \in \mathcal{R}_Q$ under an invertible private key $f \in \mathcal{R}_Q$, is defined as
+    $$\mathrm{NTRU}'_{Q, f, \tau}(v) := (\tau \cdot g_0/f + B^0\cdot v, \ldots, \tau \cdot g_{d-1}/f + B^{d-1}\cdot v) \in \mathcal{R}_Q^d,$$
+    where $f, g_0, \ldots, g_{d-1} \in \mathcal{R}_Q$ are polynomials with small coefficients and $d = \lceil \log_BQ \rceil$.
+    \label{def:vector_NTRU}
+\end{definition}
+
+We also define a bit decomposition function $\operatorname{BitDecom}_B(\cdot)$ like Xiang et al. \cite{cite:fast_bootstrap_crypto23}.
+
+
+\begin{definition}[Bit decomposition]
+    Assume that an element $a \in \mathcal{R}_Q$ can be written as $a = \sum_{i=0}^{d-1}a_i\cdot B^i$ in a base $B \in \mathbb{N}^*$, where $d = \lceil \log_B Q \rceil$. Then the bit decomposition of $a$ in base $B$ is defined as $$\operatorname{BitDecom}_B(a) := (a_0, \ldots, a_{d-1}) \in \mathcal{R}_B^d.$$
+\end{definition}
+
+Xiang et al. \cite{cite:fast_bootstrap_crypto23} now defines an external binary operation.
+\begin{definition}[$\odot$ product]
+The external binary operator $\odot$ takes in a polynomial $c \in \mathcal{R}_Q$ and a vector NTRU ciphertext $\mathbf{c}' = (c_0, \ldots, c_{d-1}) = \mathrm{NTRU}'_{Q, f, \tau}(v) \in \mathcal{R}_Q^d$, and outputs the scalar product
+$$c \odot \mathbf{c}' := \langle \operatorname{BitDecom}_B(c), \mathbf{c}' \rangle = \sum_{i=0}^{d-1}c_ic_i'=\tau \cdot \sum_{i=0}^{d-1} c_i g_i / f + cv \in \mathcal{R}_Q.$$
+\end{definition}
+
+Like Xiang et al. \cite{cite:fast_bootstrap_crypto23} show, the $\odot$ operator has a homomorphic property.
+
+\begin{lemma}[Homomorphic multiplication]
+Assume that $c = \mathrm{NTRU}_{Q, f, \tau, \Delta}(u)$ and $\mathbf{c}' = \mathrm{NTRU}'_{Q, f, \tau}(v) $. Then $\hat{c} = c \odot \mathbf{c}'$ is a scalar NTRU ciphertext of $uv$.
+\end{lemma}
+\begin{proof}
+By the definitions of scalar and vector NTRU ciphertexts above, we can write $c = \tau \cdot g/f + \Delta \cdot u/f $ and $\mathbf{c}' = (\tau \cdot g_0/f + B^0\cdot v, \ldots, \tau \cdot g_{d-1}/f + B^{d-1}\cdot v)$. Let us assume that $\operatorname{BitDecom}_B(c) = (c_0, \ldots, c_{d-1})$. Then, we get
+\begin{align*}
+    \hat{c} &= c \odot \mathbf{c}' \\
+    &= \langle \operatorname{BitDecom}_B(c), \mathbf{c}' \rangle \\
+    &= \sum_{i=0}^{d-1} c_i(\tau \cdot g_i/f + B^i\cdot v) \\
+    &= \tau \left(\sum_{i=0}^{d-1} c_ig_i\right) / f + cv \\ %(\sum_{i=1}^{d-1}c_iB^i)v \\
+    &= \tau \left(\left(\sum_{i=0}^{d-1} c_ig_i\right) + gv\right)/f + \Delta \cdot uv / f \\
+    &= \tau \cdot \hat{g} / f + \Delta \cdot uv / f,
+\end{align*}
+where $\hat{g} := \left(\sum_{i=1}^{d-1} c_ig_i\right) + gv $. We see that the product has the form of a scalar NTRU encryption of $uv$.
+\end{proof}
+
+
+\subsection{Key Switching for Scalar NTRU Ciphertexts}
+
+To switch the key of a scalar NTRU ciphertext, Xiang et al. \cite{cite:fast_bootstrap_crypto23} propose two algorithms $(\mathsf{NTRU.KSKGen}, \mathsf{NTRU.KS})$, defined in Algorithm \ref{alg:ntru_kskgen} and \ref{alg:ntru_ks} below. Note that $\mathbf{ksk}_{f_1,f_2}$ in Algorithm \ref{alg:ntru_kskgen} has the same form as a vector NTRU encryption of $f_1/f_2$ under the private key $f_2$.
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{NTRU.KSKGen}$}\label{alg:ntru_kskgen}
+\begin{algorithmic}
+\Require
+  \State $f_1 \in \mathcal{R}_Q$ \Comment{invertible key to switch from}
+  \State $f_2 \in \mathcal{R}_Q$ \Comment{invertible key to switch to}
+\Ensure $\mathbf{ksk}_{f_1,f_2}$ \Comment{key switching key}
+  \State $\mathbf{ksk}_{f_1,f_2} \gets (\tau \cdot g_0/f_2 + B^0 \cdot f_1/f_2, \ldots, \tau \cdot g_{d-1}/f_2 + B^{d-1} \cdot f_1/f_2)$
+\end{algorithmic}
+\end{algorithm}
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{NTRU.KS}$}\label{alg:ntru_ks}
+\begin{algorithmic}
+\Require
+  \State $c$ \Comment{scalar NTRU ciphertext}
+  \State $\mathbf{ksk}_{f_1,f_2}$
+\Ensure $\hat{c}$ \Comment{ciphertext under the new key}
+  \State $\hat{c} \gets c \odot \mathbf{ksk}_{f_1,f_2}$
+\end{algorithmic}
+\end{algorithm}
+
+Now, let us prove that Algorithm \ref{alg:ntru_ks} works for key switching.
+
+\begin{lemma}[NTRU key switching]
+The outputted ciphertext $\hat{c}$ in Algorithm \ref{alg:ntru_ks} is a scalar NTRU encryption of the same message as the original ciphertext $c$ but under the new private key $f_2 \in \mathcal{R}_Q$.
+\end{lemma}
+\begin{proof}
+    Let us assume that $c$ encrypts a message $u \in \mathcal{R}_Q$, so that we can write $c=\tau \cdot g/f_1 + \Delta \cdot u / f_1$, and let $\operatorname{BitDecom}_B(c) = (c_0, \ldots, c_{d-1})$. Then, since   $\mathbf{ksk}_{f_1,f_2} = \mathrm{NTRU}'_{Q, f_2, \tau}(f_1/f_2)$, we get
+    \begin{align*}
+        \hat{c} &= c \odot \mathbf{ksk}_{f_1,f_2} \\
+        &= \sum_{i=0}^{d-1} c_i(\tau \cdot g_i / f_2 + B^i \cdot f_1/f_2) \\
+        &= \tau \left(\sum_{i=0}^{d-1} c_ig_i\right)/f_2 + c\cdot f_1/f_2 \\
+        &= \tau \left(\left(\sum_{i=0}^{d-1} c_ig_i\right) + g \right)/f_2 + \Delta \cdot u / f_2 \\
+        &= \tau \cdot \hat{g} / f_2  + \Delta \cdot u / f_2
+    \end{align*}
+where $\hat{g} := \left(\sum_{i=1}^{d-1} c_ig_i\right) + g $. We see that the result is a scalar NTRU ciphertext of $u$ under $f_2$.
+\end{proof}
+
+%\section{Automorphisms on Scalar NTRU Ciphertexts}
+
+Having access to the key-switching algorithms, we can easily do the needed key-switching after having applied the automorphisms mentioned earlier. One simply applies the automorphism
+\begin{align*}
+    \psi_t: \;\; & \mathcal{R}_Q \to \mathcal{R}_Q \\
+    & c(X) \mapsto c(X^t)    
+\end{align*}
+on a scalar NTRU ciphertext $c(X)$ under a key $f(X)$, and then switch the key $f(X^t)$ of the new ciphertext $c(X^t)$ back to $f(x)$. The procedure can be divided into two steps, defined in Algorithm \ref{alg:autokgen} and \ref{alg:evalauto} below.
+
+\renewcommand{\Comment}[2][.55\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{NTRU.AutoKGen}$}\label{alg:autokgen}
+\begin{algorithmic}
+\Require
+  \State $t \in \mathbb{Z}_{2N} \backslash 2\mathbb{Z}_{2N} $ \Comment{$t$ must be odd}
+  \State $f \in \mathcal{R}_Q$ \Comment{private scalar NTRU encryption key}
+\Ensure $\mathbf{ksk}_t$ \Comment{ksk for the automorphism}
+  \State $\mathbf{ksk}_t \gets \mathsf{KSKGen}(f(X^t), f(X))$
+\end{algorithmic}
+\end{algorithm}
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{NTRU.EvalAuto}$}\label{alg:evalauto}
+\begin{algorithmic}
+\Require
+  \State $t \in \mathbb{Z}_{2N} \backslash 2\mathbb{Z}_{2N}$ \Comment{$t$ must be odd}
+  \State $c$ \Comment{scalar NTRU ciphertext}
+  \State $\mathbf{ksk}_t$
+\Ensure $\hat{c}$ \Comment{automorphic transformation}
+  \State $\hat{c} \gets \mathsf{NTRU.KS}(c(X^t), \mathbf{ksk}_t)$
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{Fast Blind Rotation Using the NTRU Setting}
+In this section, we put the previous results together and show how Xiang et al. \cite{cite:fast_bootstrap_crypto23} perform a fast blind rotation on an $\mathsf{LWE}$-based first-layer ciphertext \linebreak $\mathsf{LWE}_{q,\mathbf{s}}(m) = (\mathbf{a}, b) \in \mathbb{Z}_q^n \times \mathbb{Z}_q$. If the first-layer encryption is $\mathsf{RLWE}$-based instead, one first needs to transform the RLWE ciphertext to $N$ LWE ciphertexts, and then, after the bootstrapping, transform all LWE ciphertexts back to an RLWE ciphertext again. For more details about these steps, we refer to the paper by Xiang et al. \cite{cite:fast_bootstrap_crypto23}.
+
+The goal is to output a second-layer scalar NTRU encryption of $r(Y) \cdot Y^{\langle \mathbf{a}, \mathbf{s} \rangle -b} $, where $Y \in \mathcal{R}_Q$ is a monomial of order $q$. To do so, we introduce two algorithms $(\mathsf{XZDDF.BRKGen}, \mathsf{XZDDF.BREval})$ as Xiang et al. \cite{cite:fast_bootstrap_crypto23}. They are defined in Algorithm \ref{alg:brkgen} and \ref{alg:breval}. Note that $q|N$ is assumed.
+
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{XZDDF.BRKGen}$}\label{alg:brkgen}
+\begin{algorithmic}
+\Require
+  \State $q, n \in \mathbb{N}^*$ \Comment{first-layer parameters}
+  % \State $N$ \Comment{second-layer polynomial degree}
+  \State $\mathbf{s} \in \mathbb{Z}_q^n$ \Comment{first-layer private key}
+  \State $Q, N, \tau, \Delta \in \mathbb{N}^*$ \Comment{second-layer parameters}
+  \State $f \in \mathcal{R}_Q$ \Comment{second-layer private key}
+\Ensure $\mathbf{EVK}_{\tau, \Delta}$ \Comment{blind rotation evaluation keys}
+  \State $\mathbf{evk}_0 \gets \mathrm{NTRU}'_{Q, f, \tau}(X^{s_0}/f) $
+  \For{$i=1 \; .. \; (n-1)$}
+    \State $\mathbf{evk}_i \gets \mathrm{NTRU}'_{Q, f, \tau}(X^{s_i})$
+  \EndFor
+  \State $\mathbf{evk}_n \gets  \mathrm{NTRU}'_{Q, f, \tau}(X^{-\sum_{i=0}^{n-1}s_i})$
+  \State $S \gets \left\{\frac{2N}{q}i+1\right\}_{i=1}^{q-1}$ \Comment{all elements $j \in S$ are odd}
+  \For{$j \in S$}
+    \State $\mathbf{ksk}_j \gets \mathsf{NTRU.AutoKGen}(j,f)$
+  \EndFor
+  \State $\mathbf{EVK}_{\tau, \Delta} \gets (\mathbf{evk}_0, \ldots, \mathbf{evk}_n, \{ \mathbf{ksk}_j  \}_{j \in S})$
+\end{algorithmic}
+\end{algorithm}
+
+
+\renewcommand{\Comment}[2][.32\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{XZDDF.BREval}$}\label{alg:breval}
+\begin{algorithmic}
+\Require
+  \State $(\mathbf{a}, b) = \mathsf{LWE}_{\mathbf{s},q}(m) \in \mathbb{Z}_q^{n} \times \mathbb{Z}_q$ 
+  \State $r(X) \in \mathcal{R}_Q$ \Comment{rotation polynomial}
+  \State $\mathbf{EVK}_{\tau, \Delta} = (\mathbf{evk}_0, \ldots, \mathbf{evk}_n, \{ \mathbf{ksk}_j  \}_{j \in S})$  %\Comment{from $\mathsf{XZDDF.BRKGen}$}
+\Ensure $\mathsf{ACC} = \mathrm{NTRU}_{Q, f, \tau, \Delta}\left(r(X^{\frac{2N}{q}}) \cdot X^{\frac{2N}{q} (-b  + \sum_{i=0}^{n-1}a_is_i)}\right)$
+  \For{$i=1 \; .. \; (n-1)$}
+    \State $w_i \gets \frac{2N}{q}a_i+1$
+    \State $w_i' \gets w_i^{-1} \mod 2N$
+  \EndFor
+  \State $w_n' \gets 1$
+  \State $\mathsf{ACC} \gets \Delta \cdot r(X^{\frac{2N}{q}w_0'}) \cdot X^{-\frac{2N}{q}bw_0'}$
+  \For{$i=1 \; .. \; (n-1)$}
+    \State $\mathsf{ACC} \gets \mathsf{ACC} \odot \mathbf{evk}_i$
+    \State \textbf{if} $w_iw_{i+1}' \neq 1$ \textbf{then}
+      \State \;\;\; $\mathsf{ACC} \gets \mathsf{NTRU.EvalAuto}(\mathsf{ACC}, \mathbf{ksk}_{w_iw_{i+1}'})$ 
+    \State \textbf{endif}
+  \EndFor
+    \State $\mathsf{ACC} \gets \mathsf{ACC} \odot \mathbf{evk}_n$  
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{Switching Back to First-Layer Encryption}
+
+When having performed the blind rotation with $\mathsf{XZDDF.BREval}$ on an LWE ciphertext, one gets an NTRU ciphertext which needs to be transformed back to an LWE ciphertext. We will now show how to do this by using the extraction algorithm from Kim et al. \cite{cite:extract_blind_rotation}, which is recommended by Xiang et al. \cite{cite:fast_bootstrap_crypto23}.
+
+After the blind rotation, we get a ciphertext 
+$$c = \mathrm{NTRU}_{Q, f, \tau, \Delta}(u) := \tau \cdot g/f + \Delta \cdot u/f \in \mathcal{R}_Q$$
+where
+$$u = r(X^{\frac{2N}{q}}) \cdot X^{-\frac{2N}{q}b} X^{\sum_{i=0}^{n-1}w_is_i} X^{-\sum_{i=0}^{n-1}s_i}.$$
+We want to turn the constant term $\operatorname{coeff}_0(u) = \operatorname{noised}(m)$ of $u$ back to an LWE ciphertext.
+
+Start by defining the coefficient vectors of $c, f$, and $g$ as
+\begin{align*}
+&\mathbf{c} :=(c_0, \ldots, c_{N-1}) \in \mathbb{Z}_Q^N \\
+&\mathbf{f} := (f_0, \ldots, f_{N-1}) \in \mathbb{Z}_Q^N \\
+&\mathbf{g} := (g_0, \ldots, g_{N-1}) \in \mathbb{Z}_Q^N.
+\end{align*}
+
+Now, let us investigate the polynomial $fc \in \mathcal{R}_Q$. By the definition of scalar NTRU encryption, we get that
+$$\operatorname{coeff}_0(fc) = \tau \cdot g_0 + \Delta \cdot \operatorname{noised}(m) \in \mathbb{Z}_Q.$$
+We can also compute the constant term in the product with the binomial theorem, resulting in another expression for the constant term
+$$\operatorname{coeff}_0(fc) = f_0c_0 - \sum_{i=1}^{N-1}c_if_{N-i},$$
+where we used that 
+$$aX^N = a(X^N+1)-a \equiv -a \mod (X^N+1).$$
+Let $\hat{\mathbf{c}} = (c_0, -c_{N-1}, \ldots, -c_1) \in \mathbb{Z}_Q^N$. Then, putting the two expressions for the constant term together, we get
+$$0 = \langle \hat{\mathbf{c}}, \mathbf{f} \rangle - (\tau \cdot g_0 + \Delta \cdot \operatorname{noised}(m)) \in \mathbb{Z}_Q.$$
+
+Looking at $(\hat{\mathbf{c}}, 0) \in \mathbb{Z}_Q^N \times \mathbb{Z}_Q$, we observe that this can be seen as an LWE ciphertext of $m$ under the private key $\mathbf{f}$. Then, what remains is to switch the key $\mathbf{f}$ back to $\mathbf{s}$, and then switch the modulus $Q$ back to $q$. This is relatively easy, and we refer to the paper by Xiang et al. \cite{cite:fast_bootstrap_crypto23} to see how it is done.

@@ -1,0 +1,69 @@
+%% Other fonts (Palatino as rm font, helvetica as sf font and courier as tt font. All fonts are normally installed with a standard LaTeX distribution.)
+% \usepackage{mathpazo} % Also in math mode
+% \usepackage[scaled=.95]{helvet}
+% \usepackage{courier}
+
+\chapter[Introduction]{Introduction}
+
+
+In Figure~\ref{fig:testfig} a typical test mage is shown.
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.4\linewidth]{example-image}
+  \caption{Example image.}
+  \label{fig:testfig}
+\end{figure}
+
+
+
+\section{New new section}
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{lll}
+    Group & Test 1 & Test 2\\\hline
+    A & 253 &54\\
+    B & 636 & 33
+  \end{tabular}
+  \caption{A nice table.}
+  \label{tab:tabletest}
+\end{table}
+
+
+
+
+\begin{figure}[htbp]
+  \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \includegraphics[width=0.8\linewidth]{example-image-a}
+    \caption{Image A}
+    \label{fig:imageA}
+  \end{minipage}%
+  \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \includegraphics[width=0.8\linewidth]{example-image-b}
+    \caption{Image B. It can also be a long caption even if the space is narrow.}
+    \label{fig:imageB}
+  \end{minipage}
+\end{figure}
+
+Figure~\ref{fig:imageA} is displayed next to Figure~\ref{fig:imageB}. Notice that \verb|\linewidth| is the line width inside the \verb|minipage|.
+
+
+
+% theorems, proofs etc
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+
+\section{Introduction}
+\begin{lemma}
+Given two line segments whose lengths are \(a\) and \(b\) respectively there 
+is a real number \(r\) such that \(b=ra\).
+\end{lemma}
+
+\begin{proof}
+To prove it by contradiction try and assume that the statement is false,
+proceed from there and at some point you will arrive to a contradiction.
+\end{proof}
+
+\verb|algorithmic|

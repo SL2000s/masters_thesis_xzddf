@@ -1,0 +1,106 @@
+% Template from CS, LTH: https://bitbucket.org/flavius_gruian/msccls/src/master/popsci/
+
+% USE PDFLatex!
+% to correctly render Swedish characters
+
+\documentclass{popsci}
+
+\usepackage[utf8]{inputenc}
+\usepackage[swedish, english]{babel}
+
+\usepackage{fancyhdr}
+\usepackage{titling}
+\usepackage{color}
+\usepackage{colortbl}
+\usepackage{graphicx}
+\usepackage{flushend}
+\usepackage{lmodern}
+
+\usepackage{algorithm}      % for algorithms
+\usepackage{algpseudocode}  % for algorithms
+\usepackage{amsfonts}       % for eg. natural numbers
+\usepackage{amsmath}
+\usepackage{amssymb}        % for NAND symbol ($\barwedge$)
+\usepackage{amsthm}         % for thm, lemma, def
+\usepackage{booktabs}       % for nice tables
+%\usepackage{calrsfs}        % for (very) curly \mathcal
+\usepackage{enumitem}       % for enumeration with roman numbers
+\usepackage{glossaries}
+\usepackage{graphicx}       % included graphics and some resizable boxes
+\usepackage[hidelinks]{hyperref}       % links to [1], url's etc.
+\usepackage{mathrsfs}       % for (very) curly \mathscr
+\usepackage{url}            % nice urls with line breaks
+\usepackage{scrextend}      % addmargin command
+\usepackage{siunitx}        % round in tables
+\usepackage{subcaption}     % subfigures
+\usepackage{textcomp}       % for trademark symbols
+\usepackage{tikz}\usetikzlibrary{positioning}           % for figures
+\usepackage{xr}             % cross-referencing -- for references etc
+
+\usepackage{fancyhdr}
+\usepackage{tikz}\usetikzlibrary{positioning}
+
+
+
+
+% Please specify the presentation date
+\presentationsdag{2016-04-28}
+
+% use either of these commands to specify the title of your thesis
+% \examensarbete{}
+% To create a title in two rows, leave examensarbete blank and fill in examensarbeteTwoRows.
+\examensarbete{XZDDF Bootstrapping in Fully Homomorphic Encryption}{}
+\student{Simon Ljungbeck}
+%\students{Magnus Hultin}{Mr X}
+\supervisor{Qian Guo}
+\examiner{Thomas Johansson}
+
+% Your pop-sci title should be different (more catchy) than your thesis title
+\title{Using XZDDF Bootstrapping to Speed up Fully Homomorphic Encryption}
+
+
+\begin{document}
+
+% not more than 4 rows!
+\theabstract{Fully Homomorphic Encryption (FHE) can be used when delegating computations to third parties. However, current FHE schemes tend to be slow.  In this project, a new algorithm, with the potential to speed up FHE, has been investigated.}
+
+
+{\noindent 
+To perform computations on encrypted data, one normally needs to decrypt it first. However, a few years ago, a new type of encryption schemes was discovered, allowing computations on encrypted data directly. This kind of encryption is called Fully Homomorphic Encryption (FHE) and basically means that any function evaluation can be made without revealing the input to the function.
+
+Fully homomorphic encryption has many interesting applications, especially when third parties are given data to do computations on. One example is when training a machine learning model in the cloud. Normally, the cloud service then gets access to the training data, violating the privacy of it. However, if using fully homomorphic encryption, one can upload the training data in an encrypted form and train the model homomorphically. The resulting model is the same, but the privacy of the training data and the model parameters is kept.
+
+Although theoretically appealing, in practice, all existing FHE schemes are too slow. Most FHE schemes are noise-based, meaning that each ciphertext contains some noise. When performing computations homomorphically, this noise grows until a point is reached where the decryption will fail. The ciphertext needs to be refreshed before this bound is exceeded, and it is this reduction of noise that usually is the reason why fully homomorphic encryption is relatively slow.
+
+One common way to reduce the noise, which is both simple and elegant, is the so-called bootstrapping technique. The algorithm first encrypts the ciphertext to a new ciphertext, and then exploits the homomorphic property of the encryption scheme, decrypting the first-layer ciphertext homomorphically. In this way, it is as if a new encryption, of the same message, was just computed so that the noise is reset. See Figure \ref{fig:bs_tikz} for an illustration of this.
+
+\begin{figure}[!bth]
+\centering\resizebox{\columnwidth}{!}{%
+        \input{im}
+}
+\caption{Illustration showing how bootstrapping works.}
+\label{fig:bs_tikz}
+
+% \includegraphics[width=\columnwidth]{samplePic.pdf} 
+%\caption{En fin bild}
+\end{figure}
+
+
+
+Since bootstrapping is the main bottleneck in FHE schemes, a lot of research is going on about the topic. In this project, a new way of doing bootstrapping was studied. The new algorithm, called XZDDF, was first analyzed and then implemented in an open-source library for fully homomorphic encryption. Theoretically, the time complexity of the algorithm is lower than for previous algorithms, but the execution time of the implementation was about the same as for conventional bootstrapping.
+}
+% För att öka prestandan i dagens processorer finns det vektorenheter och flera kärnor i processorer. Vektorenheten finns till för att kunna utföra en operation på en mängd data samtidigt och flera kärnor gör att man kan utföra fler instruktioner samtidigt. Ofta är processorerna designade för att kunna stödja en mängd olika datorprogram. Detta resulterar i att det blir kompromisser som kan påverka prestandan för vissa program och vara överflödigt för andra. I t.ex. videokameror, mobiltelefoner, medicinsk utrustning, digital kameror och annan inbyggd elektronik, kan man istället använda en processor som saknar vissa funktioner men som istället är mer energieffektiv. Man kan jämföra det med att frakta ett paket med en stor lastbil istället för att använda en mindre bil där samma paketet också skulle få plats.
+
+% I mitt examensarbete har jag skrivit en modell som kan användas för att snabbt designa en processor enligt vissa parametrar. Dessa parametrar väljs utifrån vilket eller vilka program man tänkta köra på den. Vissa program kan t.ex. lättare använda flera kärnor och vissa program kan använda korta eller längre vektorenheter för dess data.
+
+% %För att kunna välja vilken typ av processor som är rätt för den specifika applikationen krävs det ofta att man snabbt kan testa olika prototyper. Att implementera dessa till hårdvara kan ofta vara tidskrävande och ifall det visar sig att implementationen inte klarar dem kraven man ställt för prestanda och energieffektivitet, måste man designa för nya parametrar och mer tid har blivit slösat. %Om den här processen istället kan göras automatiskt utifrån dessa design-parametrar kan man teoretiskt spara en massa tid.
+% Modellen testades med olika multimedia program. Den mest beräkningsintensiva och mest upprepande delen av programmen användes. Dessa kallas för kärnor av programmen. Kärnorna som användes var ifrån MPEG och JPEG, som används för bildkomprimering och videokomprimering.
+
+% \begin{figure}[!bth] % Use pictures in your pop-vet!
+% \includegraphics[width=\columnwidth]{samplePic.pdf} 
+% %\caption{En fin bild}
+% \end{figure}
+% Resultatet visar att det finns en prestanda vinst jämfört med generella processorer men att detta också ökar resurserna som behövs. Detta trots att den generella processorn har nästan dubbelt så hög klockfrekvens än dem applikations-specifika processorerna. Resultatet visar också att schemaläggning av instruktionerna i programmen spelar en stor roll för att kunna utnyttja resurserna som finns tillgängliga och därmed öka prestandan. Med den schemaläggningen som utnyttjade resurserna bäst var prestandan minst 79\% bättre än den generella processorn.
+% }
+
+\end{document}

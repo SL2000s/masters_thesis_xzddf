@@ -1,0 +1,173 @@
+%As far as the author of this thesis can understand, there is a problem with the XZDDF blind rotation from Xiang et al. \cite{cite:fast_bootstrap_crypto23}, described in Chapter \ref{sec:xzddf_intro} above. In this chapter, we will explain what goes wrong, and then propose a solution to the problem when working with boolean operations.
+
+There is a problem with the XZDDF blind rotation from Xiang et al. \cite{cite:fast_bootstrap_crypto23}. In this chapter, we will first explain what goes wrong in the algorithm, and then propose a solution to the problem when working with Boolean operations.
+
+
+\section{The Problem}
+
+The problem with the blind rotation from Xiang et al. \cite{cite:fast_bootstrap_crypto23} is related to the rotation polynomial $r(X^{\frac{2N}{q}}) = \sum_{i=0}^{q-1} iX^{- \frac{2N}{q} \cdot i}$. Since we are working in the ring \linebreak $\mathcal{R}_Q := \mathbb{Z}_Q[X]/(X^N+1)$, we have that $X^N \equiv -1$ and $X^{2N} \equiv 1$, so
+\begin{equation*}
+  X^{-i} =
+    \begin{cases}
+      1, & \text{if $i=0$} \\
+      -X^{N-i}, & \text{if $1 \leq i \leq N$}\\
+      X^{2N-i}, & \text{if $N+1 \leq i \leq 2N-1$}.
+    \end{cases}       
+\end{equation*}
+To make things simpler, let us assume that $q=2N$. Then
+\begin{align*}
+    r(X) &= \sum_{i=0}^{q-1} iX^{-i} \\
+    &= -1 \cdot X^{N-1} -2 \cdot X^{N-2} - \dots - N + \\
+    & \;\;\;\; + (N+1) \cdot X^{N-1} + (N+2) \cdot X^{N-2} + \dots + (2N-1) \cdot X \\
+    & = -N + N \cdot X + N \cdot X^2 + \dots + N \cdot X^{N-1}.
+\end{align*}
+This means, that when computing the product $r(X) \cdot X^{\operatorname{noised}(m)}$, in general, the coefficient term
+$$\operatorname{coeff}_0 \left(r(X) \cdot X^{\operatorname{noised}(m)}\right) \neq \operatorname{noised}(m).$$
+
+The problem is that the second half of the terms in the sum $r(X) = \sum_{i=0}^{q-1} iX^{-i}$ wraps around, and is added to the first half of the terms. This means, that the problem arises not only for $q=2N$ that we assumed, but also for any $q|2N$ and $r(X^{\frac{2N}{q}})$.
+
+An obvious way to avoid the problem with the wrap-around is to just skip the second half of the terms, i.e. defining the rotation polynomial as
+$$r(X^{\frac{2N}{q}}) := \sum_{i=0}^{q/2-1} iX^{- \frac{2N}{q} \cdot i}.$$
+However, then for messages $\operatorname{noised}(m) \geq \frac{q}{2}$, we still have that
+$$\operatorname{coeff}_0 \left(r(X^{\frac{2N}{q}}) \cdot X^{\frac{2N}{q} \cdot \operatorname{noised}(m)}\right) \neq \operatorname{noised}(m).$$
+We will now explain how this rotation polynomial can be slightly modified so that we can retrieve all binary plaintext messages.
+
+
+\section{A Suggestion of Solution}
+
+In this section, a proposal for a solution to the problem above will be suggested. The solution is, however, constrained to the case when working with Boolean operations and binary messages.
+
+Assume that the message is $m \in \mathbb{Z}_2$, and that we are using a Regev-like encryption
+$$c = \operatorname{LWE}_{q,\mathbf{s}}(m) = \left(\mathbf{a}, b = \langle \mathbf{a}, \mathbf{s} \rangle + m \cdot \frac{q}{t} + e\right),$$
+where $t=4$ (this choice will be explained below).
+
+Let $\diamond$ denote a binary operation that we want to compute on two ciphertexts $c_0 = (\mathbf{a}_0,b_0)$ and $c_1 = (\mathbf{a}_1,b_1)$, i.e. we want to compute $c_0 \diamond c_1$. For example, $\diamond$ can be $\operatorname{OR}$ or $\operatorname{AND}$.
+
+The algorithm then starts by computing
+$$c = c_0 + c_1 = (\mathbf{a}_0 + \mathbf{a}_1, b_0 + b_1) =: (\mathbf{a},b).$$
+Since $\operatorname{LWE}$ is homomorphic, we now have that
+\begin{equation*}
+  \operatorname{Dec}(c) =
+    \begin{cases}
+      0, & \text{if $(m_0, m_1) = (0,0)$} \\
+      1, & \text{if $(m_0, m_1) = (0,1)$ or $(1,0)$}\\
+      2, & \text{if $(m_0, m_1) = (1,1)$}.
+    \end{cases}
+\end{equation*}
+This is why we set $t=4$ -- we want to be able to handle twos and threes so that we keep the information about whether the sum was an addition of two zeros or two ones.
+
+Now, we will do a modified version of XZDDF bootstrapping on $c$.
+
+Let us denote $\operatorname{noised}(m) := b - \langle \mathbf{a}, \mathbf{s} \rangle = m \cdot \frac{q}{t} + e$, and define $t$ intervals
+$$I_i := \left[ i \cdot \frac{q}{t} - \frac{q}{2t},  i \cdot \frac{q}{t} + \frac{q}{2t}\right) \subset \mathbb{Z}_q,$$
+for $i \in \{0,1, \dots, t-1 \}$. In our case, we have the $t=4$ intervals
+\begin{align*}
+    I_0 &= \left[-\frac{q}{8}=\frac{7q}{8}, \frac{q}{8}\right), \\
+    I_1 &= \left[\frac{q}{8}, \frac{3q}{8}\right), \\
+    I_2 &= \left[\frac{3q}{8}, \frac{5q}{8}\right), \\
+    I_3 &= \left[\frac{5q}{8}, \frac{7q}{8}\right).
+\end{align*}
+
+If for example $\diamond = \operatorname{OR}$, we now want a function $f_{\operatorname{OR}}$ that maps
+
+\begin{equation*}
+  f_{\operatorname{OR}}: \;\; \left (X^{\frac{2N}{q}}\right)^{\operatorname{noised}(m)} \mapsto
+    \begin{cases}
+      0, & \text{if $\operatorname{noised}(m) \in I_0$} \\
+      1, & \text{if $\operatorname{noised}(m) \in I_1$} \\
+      1, & \text{if $\operatorname{noised}(m) \in I_2$} \\
+      0, & \text{if $\operatorname{noised}(m) \in I_3$}.
+    \end{cases}
+\end{equation*}
+
+Similarly, if $\diamond = \operatorname{AND}$, we want a function $f_{\operatorname{AND}}$ that maps
+
+\begin{equation*}
+  f_{\operatorname{AND}}: \;\; \left (X^{\frac{2N}{q}}\right)^{\operatorname{noised}(m)} \mapsto
+    \begin{cases}
+      0, & \text{if $\operatorname{noised}(m) \in I_0$} \\
+      0, & \text{if $\operatorname{noised}(m) \in I_1$} \\
+      1, & \text{if $\operatorname{noised}(m) \in I_2$} \\
+      1, & \text{if $\operatorname{noised}(m) \in I_3$}.
+    \end{cases}
+\end{equation*}
+
+Working cyclically, modulo $q$, the interval $I_0$ can be seen as the following interval to $I_3$. We then see that for both operators $\operatorname{OR}$ and $\operatorname{AND}$, the intervals that are mapped to 0 and 1 consist of two following intervals
+\begin{align*}
+&I^0 = I_{k} \cup I_{(k+1 \text{ mod 4})}\\
+&I^1 = I_{(k+2 \text{ mod 4})} \cup I_{(k+3 \text{ mod 4})},    
+\end{align*}
+ where $k=3$ for $\operatorname{OR}$ and $k=0$ for $\operatorname{AND}$. In fact, as can be seen in the \texttt{binfhe/} directory of \texttt{OpenFHE} \cite{cite:openFHE}, one can for any binary operation find two intervals $I^0 = [q_0, q_1)$ and $I^1 = [q_1, q_0)$, where $q_1=q_0 + q/2$ (sometimes the binary operation needs to be computed as a composition of other binary operations).
+
+Working in $R_Q$, we know that $X^i$ wraps around negacyclically at $i=N$, so that $aX^i = -aX^{i+N} \mod (X^N+1)$. This property was the cause of failure when using the original rotation polynomial, but it can also be used to solve the problem by forming a new rotation polynomial
+        \begin{align}
+            r(X^{\frac{2N}{q}}) :&= -\sum_{i=0}^{q/4-1} \left(X^{-\frac{2N}{q}}\right)^i + \sum_{i=q/4}^{q/2-1} \left(X^{-\frac{2N}{q}}\right)^i \notag \\ %\label{eq:new_rot} \\
+            &= -1 \cdot \left(X^{-\frac{2N}{q}}\right)^0 - 1 \cdot \left(X^{-\frac{2N}{q}}\right)^1 - \dots - 1 \cdot \left(X^{-\frac{2N}{q}}\right)^{\frac{q}{4}-1} + \notag \\
+            & \;\;\;\; + 1 \cdot \left(X^{-\frac{2N}{q}}\right)^{\frac{q}{4}} + 1 \cdot \left(X^{-\frac{2N}{q}}\right)^{\frac{q}{4}+1} + \dots + 1 \cdot \left(X^{-\frac{2N}{q}}\right)^{\frac{q}{2}-1} \notag
+        \end{align}
+% \begin{align*}
+% r(X^{\frac{2N}{q}}) = -1 & \cdot \left(X^{-\frac{2N}{q}}\right)^0 - 1 \cdot \left(X^{-\frac{2N}{q}}\right)^1 - \dots - 1 \cdot \left(X^{-\frac{2N}{q}}\right)^{\frac{q}{4}-1} + \\
+% &+ 1 \cdot \left(X^{-\frac{2N}{q}}\right)^{\frac{q}{4}} + \dots + 1 \cdot \left(X^{-\frac{2N}{q}}\right)^{\frac{q}{2}-1}.
+% \end{align*}
+
+In this way,
+\begin{equation*}
+    m':=\operatorname{coeff}_0\left(r(X^{\frac{2N}{q}}) \cdot \left(X^{\frac{2N}{q}(\operatorname{noised}(m)+(\frac{q}{4}-q_1))}\right)\right) = 
+    \begin{cases}
+      -1, & \text{if $\operatorname{noised}(m) \in [q_0, q_1)$} \\
+      1, & \text{if $\operatorname{noised}(m) \in [q_1, q_0)$}.
+      % 1, & \text{if $\operatorname{noised}(m) \in [q_1, q_0)$} \\
+      % -1, & \text{if $\operatorname{noised}(m) \in [q_0, q_1)$}.
+    \end{cases}
+\end{equation*}
+
+We compute this constant term just as in the original XZDDF bootstrapping. The final problem to overcome with this algorithm is to find a way to map the constant term back to binary values:
+\begin{equation*}
+    m' \mapsto
+    \begin{cases}
+      0, & \text{if $m' = -1$} \\
+      1, & \text{if $m' = 1$}.
+    \end{cases}
+\end{equation*}
+
+This is easily achieved by first choosing $\Delta = \frac{Q}{4} \cdot \frac{1}{2} = \frac{Q}{8}$ in the NTRU encryption. The output from the XZDDF blind rotation is an  $\operatorname{LWE}$ ciphertext on the form
+$$c' = \operatorname{LWE}_{Q,\mathbf{f}}(m') = (\mathbf{a}, b' = \langle \mathbf{a}, \mathbf{s} \rangle + \Delta \cdot m' + e)$$
+in modulo $Q$ and under the secret key $\mathbf{f}$. We know that $m' \in \{-1,1\}$, and with $\Delta = \frac{Q}{8}$, we get
+\begin{equation*}
+    c' = \operatorname{LWE}_{Q,\mathbf{f}}(m') =
+    \begin{cases}
+      (\mathbf{a}, b' = \langle \mathbf{a}, \mathbf{s} \rangle - \frac{Q}{8} + e), & \text{if $m' = -1$} \\
+      (\mathbf{a}, b' = \langle \mathbf{a}, \mathbf{s} \rangle + \frac{Q}{8} + e), & \text{if $m' = 1$}. \\
+    \end{cases}
+\end{equation*}
+Finally, we compute a ciphertext
+$$c = (\mathbf{a},b) = \left(\mathbf{a},b' + \frac{Q}{8}\right).$$
+In this way,
+\begin{equation*}
+    c = \operatorname{LWE}_{Q,\mathbf{f}}(m') =
+    \begin{cases}
+      (\mathbf{a}, b = \langle \mathbf{a}, \mathbf{s} \rangle + e), & \text{if $m' = -1$} \\
+      (\mathbf{a}, b = \langle \mathbf{a}, \mathbf{s} \rangle + \frac{Q}{4} + e), & \text{if $m' = 1$},
+    \end{cases}
+\end{equation*}
+so that
+\begin{equation*}
+    m = \operatorname{Dec}(c) =
+    \begin{cases}
+      0, & \text{if $m' = -1$} \\
+      1, & \text{if $m' = 1$},
+    \end{cases}
+\end{equation*}
+which is just the map we wanted. Then, it is just to do the modulo switch and the key switch back to $q$ and $\mathbf{s}$ as usual. Now, the problem has been solved.
+
+\subsection{Summary of Solution}
+In summary, we have found a modification of the XZDDF algorithm that works when doing Boolean operations with binary messages, and when the first-layer encryption is Regev LWE encryption. The modified XZDDF bootstrapping is performed by the following steps.
+\begin{enumerate}
+    \item Set $\Delta = Q/8$.
+    \item Add $(q/4-q_1)$ to the last element $b_{\text{{in}}}$ of the inputted LWE ciphertext \linebreak $c_{\text{{in}}}=(\mathbf{a}_{\text{{in}}},b_{\text{{in}}})$, where $q_1$ is depends on the binary operation and can be computed by for example \texttt{OpenFHE}.
+    $$c'_{\text{{in}}} = \left(\mathbf{a}_{\text{{in}}},b_{\text{{in}}} + q/4-q_1\right).$$
+    \item Use the rotation polynomial $$r(X^{\frac{2N}{q}}) = -\sum_{i=0}^{q/4-1} \left(X^{-\frac{2N}{q}}\right)^i + \sum_{i=q/4}^{q/2-1} \left(X^{-\frac{2N}{q}}\right)^i.$$
+    \item Perform XZDDF bootstrapping as usual and extract the LWE ciphertext.
+    \item Add $Q/8$ to the last element $b'_{\text{out}}$ of the outputted LWE ciphertext \linebreak $c'_{\text{out}}=(\mathbf{a}_{\text{out}},b'_{\text{out}})$:
+    $$c_{\text{out}} = \left(\mathbf{a}_{\text{out}},b'_{\text{out}} + \frac{Q}{8}\right).$$
+\end{enumerate}

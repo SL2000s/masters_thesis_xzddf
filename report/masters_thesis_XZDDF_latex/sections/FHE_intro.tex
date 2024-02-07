@@ -1,0 +1,203 @@
+
+%\section{Cryptographic Notations}
+
+
+\section{Cryptographic Notations and Definitions}
+
+In this section, some notations and definitions related to fully homomorphic encryption are introduced. %In addition, an overview of the properties of fully homomorphic encryption schemes will be given.
+
+First of all, let $\mathcal{E}$ denote an encryption scheme that can encrypt and decrypt messages and ciphertexts, respectively. The set of messages (plaintexts) that the cryptosystem can encrypt is denoted by $\mathcal{M}$. Similarly, denote the set of ciphertexts that the system can decrypt by $\mathcal{C}$.
+
+Also, for a given encryption scheme $\mathcal{E}$, let the functions
+\begin{align*} 
+&\operatorname{Enc}: \; \mathcal{M} \to \mathcal{C} \\
+&\operatorname{Dec}: \; \mathcal{C} \to \mathcal{M}
+\end{align*}
+denote the encryption function and the decryption function, respectively. This means that $\operatorname{Dec}(\operatorname{Enc}(x)) = x$ for any message $x \in \mathcal{M}$.
+
+In the case of symmetric-key cryptography, one can use the notations $\operatorname{Enc}_k$ and $\operatorname{Dec}_k$ to emphasize the need for the secret key $k$ to encrypt and decrypt. Similarly, we write $\operatorname{Enc}_{\mathsf{pk}}$ and $\operatorname{Dec}_{\mathsf{sk}}$ in public-key cryptography, where $\mathsf{sk}$ is the private key and $\mathsf{pk}$ is the public key.
+
+Now, fully homomorphic encryption can be defined.
+\begin{definition}[Fully homomorphic encryption]\label{def:fhe}
+An encryption scheme $\mathcal{E}$ is called a fully homomorphic encryption (FHE) scheme if its encryption function $\operatorname{Enc}: \; \mathcal{M} \to \mathcal{C}$ preserves the two operations addition and multiplication, i.e. 
+\begin{align*} 
+&\operatorname{Enc}(x+y) = \operatorname{Enc}(x) \oplus \operatorname{Enc}(y) \\
+&\operatorname{Enc}(x \cdot y) = \operatorname{Enc}(x) \odot \operatorname{Enc}(y),
+\end{align*}
+for some operations $\oplus$ and $\odot$ on the set of ciphertexts.
+\end{definition}
+
+This means that in fully homomorphic encryption schemes, computations with encrypted messages can be performed without the need of first decrypting them.
+
+Being able to perform both addition and multiplication means that we can also compute $\operatorname{XOR}$ and $\operatorname{AND}$ operations. Since these two operators form a functionally complete set of Boolean operators, i.e. they can express all possible truth tables, any Boolean circuit can be computed in a fully homomorphic encryption scheme \cite{cite:QianFHE}.
+
+Now, the following notations are introduced
+\begin{align*} 
+& \mathscr{M} = (\mathcal{M}, +, \times) \\
+& \mathscr{C} = (\mathcal{C}, \oplus, \otimes).
+\end{align*}
+$\mathscr{M}$ is a mathematical structure consisting of the plaintext set $\mathcal{M}$ associated with the addition and multiplication operation. Similarly, $\mathscr{C}$ is the cipher text space, consisting of the corresponding two operators $\oplus$ and $\otimes$, operating on ciphertexts in $\mathcal{C}$. In practical implementations, we usually have that $\oplus = +$ and $\otimes = \times $.
+
+We also define some weaker forms of homomorphic encryption.
+\begin{definition}[Somewhat homomorphic encryption]\label{def:she}
+An encryption scheme $\mathcal{E}$ is called a somewhat homomorphic encryption (SHE) scheme if it is homomorphic only for a limited class of circuits.
+\end{definition}
+%We also introduce the term \textit{levelled homomorphic encryption} (LHE), which, in contrast to SHE schemes, can evaluate any circuits, but just up to a certain depth.
+\begin{definition}[Levelled homomorphic encryption]\label{def:lhe}
+An encryption scheme $\mathcal{E}$ is called a levelled homomorphic encryption (LHE) scheme if it can evaluate any circuits of bounded depth, i.e. a depth lower than a predetermined value.
+\end{definition}
+% better def levelled fully homomorphic encryption? \url{https://eprint.iacr.org/2011/344.pdf} p.13
+
+Note that the sets of SHE schemes and LHE schemes are not disjoint.
+
+
+At last, the security parameter is defined.
+\begin{definition}[Security parameter]\label{def:security_parameter}
+The security parameter $\lambda$ in an encryption scheme $\mathcal{E}$ is a parameter in bits that decides the sizes of the other parameters in $\mathcal{E}$ so that the time complexity for breaking the system becomes $\mathcal{O}(2^{\lambda})$.
+\end{definition}
+%Usually, $\lambda$ is in bits, and if, for example, $\lambda = 128$ bits, it means that the time complexity for breaking the system is $\mathcal{O}(2^{128})$
+
+
+%%%%%%%% Structure of FHE %%%%%%%%
+\section{Structure of Fully Homomorphic Encryption Schemes}
+
+Usually, FHE schemes are based on the $\mathsf{LWE}$ problem. This means that each ciphertext has some noise associated with it, and the noise will increase each time an operation is performed. If too many operations are computed, the cumulative noise will become so big that the decryption fails. Luckily, there are solutions to avoid this by decreasing the noise before it becomes too large. We say that a ciphertext is \textit{refreshed} when we decrease its noise.
+
+Without refreshing, the encryption scheme is homomorphic only for a limited number of operations, i.e. it is just an SHE scheme.
+
+Gentry \cite{cite:gentry1} shows that any SHE scheme can be modified to become fully homomorphic. To refresh the ciphertexts, he introduces a technique called \textit{bootstrapping}.
+
+The general FHE scheme Gentry \cite{cite:gentry1} suggests consists of the four algorithms
+$$\mathcal{E} = (\operatorname{KeyGen}, \operatorname{Enc}, \operatorname{Dec}, \operatorname{Eval}),$$
+where all components are probabilistic polynomial-time (PPT) algorithms \cite{cite:QianFHE}. As before, $\operatorname{Enc}$ and $\operatorname{Dec}$ denote the encryption and the decryption functions, respectively. %However, the range of the $\operatorname{Dec}$ function is extended to $\mathcal{M} \cup \{\perp\}$, where $\perp$ means decryption failure (eg. because of too much noise).
+
+$\operatorname{KeyGen}$ is a function that takes a security parameter $\lambda$ as input and outputs
+$$\operatorname{KeyGen}: \; \lambda \mapsto (\mathsf{sk}, \mathsf{pk}, \mathsf{evk}),$$
+where $\mathsf{sk}$ is a private key, $\mathsf{pk}$ is a public key, and $\mathsf{evk}$ is a public evaluation key. The latter is used to evaluate functions on ciphertexts homomorphically.
+
+$\operatorname{Eval}$ is a function that takes the following input:
+\begin{itemize}
+    \item An evaluation key $\mathsf{evk}$
+    \item A function $f: \mathcal{M}^t \to \mathcal{M}$ taking $t$ inputs $x_1, ..., x_t \in \mathcal{M}$
+    \item $t$ ciphertexts $(c_1, ..., c_t).$
+\end{itemize}
+It then, with overwhelming probability, outputs
+$$\operatorname{Eval}_{\mathsf{evk}}: \; (f, (c_1, ..., c_t)) \mapsto \operatorname{Enc}_{\mathsf{pk}}\bigl(f(\operatorname{Dec}_{\mathsf{sk}}(c_1), ..., \operatorname{Dec}_{\mathsf{sk}}(c_t))\bigr).$$
+This means that $\operatorname{Eval}$ is a function that takes a given number of ciphertexts as input and outputs the encrypted value that $f$ would output if inputting the corresponding plaintexts to it. Note that $\operatorname{Eval}$ does this without any knowledge about the private key $\mathsf{sk}$.
+
+Appendix \ref{sec:fhe_schemes} contains theory about some of the common FHE schemes.
+
+%[TODO??] funtions in $\mathcal{F}$, maximum cipher bit-length...? bottom p.6 in \cite{cite:QianFHE}
+
+
+\section{Introduction to Bootstrapping}
+
+%When having performed many homomorphic operations on a ciphertext in a somewhat homomorphic encryption scheme, the noise has increased.
+The bootstrapping technique that Gentry \cite{cite:gentry1} proposes for reducing the noise is illustrated in Figure \ref{fig:bs_tikz} below. Algorithm \ref{alg:bootstrap} shows more specifically how the method works. Note that the algorithm does not contain any secret data, and hence, it may be performed by a third party.
+
+
+\begin{figure}[ht]
+    \centering\resizebox{\textwidth}{!}{%
+        \input{tikz_figs/bootstrapping_sketch}
+    }
+    \caption{Illustration showing how bootstrapping works.}
+    \label{fig:bs_tikz}
+\end{figure}
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}
+\caption{\;\;Naive bootstrapping}\label{alg:bootstrap}
+\begin{algorithmic}
+\Require
+  \State $\overline{\mathsf{sk}} = \operatorname{Enc}_{\mathsf{pk}}(\mathsf{sk})$ \Comment{encryption of the secret key}
+  \State $\mathsf{pk}$
+  \State $\mathsf{evk}$
+  \State $c = \operatorname{Enc}_{\mathsf{pk}}(m)$ \Comment{encrypted message to refresh}
+\Ensure $c' = \operatorname{Enc}_{\mathsf{pk}}(m)$ \Comment{$c'$ has smaller noise than $c$}
+\State $\overline{c} \gets \operatorname{Enc}_{\mathsf{pk}}(c)$ %\Comment{Encrypted $c$ still contain much noise}
+\State $c' \gets \operatorname{Eval}_{\mathsf{evk}}(\operatorname{Dec}, \overline{c}, \overline{\mathsf{sk}}) $
+%\Comment{$\operatorname{Dec}$ uses last argument as key}
+\end{algorithmic}
+\end{algorithm}
+
+
+
+%\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+%\begin{algorithm}
+%\caption{General Bootstrapping}\label{alg:bootstrap}
+%\begin{algorithmic}
+%\Require
+%  \State $\overline{\mathsf{sk}_1} = \operatorname{Enc}_{\mathsf{pk}_2}(\mathsf{sk}_1)$ \Comment{Encryption of secret key 1}
+%  \State $\mathsf{pk}_1$ %\Comment{The public key in key pair 1}
+%  \State $\mathsf{pk}_2$ %\Comment{The public key in key pair 2}
+%  \State $\mathsf{evk}_2$ %\Comment{The evaluation key to key pair 2}
+  %\State $\mathsf{evk}_2$
+%  \State $\operatorname{Enc}$ %\Comment{Encryption algorithm}
+%  \State $\operatorname{Dec}$
+%  \State $\operatorname{Eval}$ %\Comment{Evaluation algorithm for key pair 2}
+%  \State $c = \operatorname{Enc}_{\mathsf{pk}_1}(m)$ \Comment{Encrypted message to refresh}
+%\Ensure $c' = \operatorname{Enc}_{\mathsf{pk}_2}(m)$ \Comment{$c'$ has smaller noise than $c$}
+%\State $\overline{c} \gets \operatorname{Enc}_{\mathsf{pk}_2}(c)$ %\Comment{Encrypted $c$ still contain much noise}
+%\State $c' \gets \operatorname{Eval}_{\mathsf{evk}}(\operatorname{Dec}, \overline{c}, \overline{\mathsf{sk}_1}) $
+%\Comment{$\operatorname{Dec}$ uses last argument as key}
+%\end{algorithmic}
+%\end{algorithm}
+
+%\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+%\begin{algorithm}
+%\caption{General Bootstrapping}\label{alg:bootstrap}
+%\begin{algorithmic}
+%\Require
+%  \State $(\mathsf{sk}_1, \mathsf{pk}_1)$ \Comment{Key pair 1}
+%  \State $(\mathsf{sk}_2, \mathsf{pk}_2, \mathsf{evk}_2)$ \Comment{Key pair 2 and evaluation key 2}
+%  %\State $\mathsf{evk}_2$
+%  \State $\operatorname{Enc}$ %\Comment{Encryption algorithm}
+%  \State $\operatorname{Dec}$
+%  \State $\operatorname{Eval}$ %\Comment{Evaluation algorithm for key pair 2}
+%  \State $c = \operatorname{Enc}_{\mathsf{pk}_1}(m)$ \Comment{Encrypted message to refresh}
+%\Ensure $c'$ \Comment{$c' := \operatorname{Enc}_{\mathsf{pk}_2}(m)$ with small noise}
+%\State $\overline{\mathsf{sk}_1} \gets \operatorname{Enc}_{\mathsf{pk}_2}(\mathsf{sk}_1)$
+%\State $\overline{c} \gets \operatorname{Enc}_{\mathsf{pk}_2}(c)$ %\Comment{Encrypted $c$ still contain much noise}
+%\State $c' = \operatorname{Eval}_{\mathsf{evk}}(\operatorname{Dec}, \overline{c}, \overline{\mathsf{sk}_1}) $
+%\Comment{$\operatorname{Dec}$ uses last argument as key}
+%\end{algorithmic}
+%\end{algorithm}
+
+At the last line of Algorithm \ref{alg:bootstrap}, the new ciphertext $c'$ encrypts the same message as the inputted ciphertext $c$. This can be shown by expanding the expression assigned to $c'$:
+\begin{align*}
+    c' &= \operatorname{Eval}_{\mathsf{evk}}(\operatorname{Dec}, \overline{c}, \overline{\mathsf{sk}}) \\
+    &= \operatorname{Eval}_{\mathsf{evk}}(\operatorname{Dec}, \operatorname{Enc}_{\mathsf{pk}}(c), \operatorname{Enc}_{\mathsf{pk}}(\mathsf{sk})) \\
+    &= \operatorname{Enc}_{\mathsf{pk}}(\operatorname{Dec}_{\mathsf{sk}}(c)) \\
+    &= \operatorname{Enc}_{\mathsf{pk}}(m)
+\end{align*}
+In other words,
+$$\operatorname{Dec}_{\mathsf{sk}}(c') = \operatorname{Dec}_{\mathsf{sk}}(\operatorname{Enc}_{\mathsf{pk}}(m)) = m = \operatorname{Dec}_{\mathsf{sk}}(\operatorname{Enc}_{\mathsf{pk}}(m)) = \operatorname{Dec}_{\mathsf{sk}}(c).$$
+This means that $c'$ and $c$ are decrypted to the same message, but since many homomorphic computations have been performed on $c$, while $c'$ is new, $c'$ contains less noise. Note, however, that one operation has already been performed, namely the homomorphic decryption (last line of Algorithm \ref{alg:bootstrap}), so it does not contain as little noise as if $m$ was encrypted completely from scratch.
+
+One last note is that bootstrapping, unfortunately, is quite computationally heavy and requires much memory. Therefore, there is huge interest in today's FHE research to increase the efficiency of bootstrapping.
+
+
+%[TODO: draw image??]
+
+%Read:
+%\begin{itemize}
+%    \item bs in Gentry's original paper
+%    \item AP bs \url{https://eprint.iacr.org/2014/094.pdf}
+%    \item GINX bs \url{https://eprint.iacr.org/2014/283.pdf}
+%    \item improvements (best of both) \url{https://eprint.iacr.org/2022/198.pdf}
+%    \item bootstrapping for FHEW etc \url{https://eprint.iacr.org/2020/086.pdf}
+%\end{itemize}
+
+
+\section{Bootstrapping}\label{sec:bootstrapping}
+\input{sections/bootstrapping}
+
+
+\section{Security}
+
+As can be seen in Algorithm \ref{alg:bootstrap}, an encryption of the private key $\overline{\mathsf{sk}} = \operatorname{Enc}_{\mathsf{pk}}(\mathsf{sk})$ is required when doing bootstrapping. All existing FHE schemes today require this in one way or another \cite{cite:QianFHE}. Therefore, one assumption for FHE schemes to be secure is that it is safe to decrypt a private key under its public key. This assumption is called the \textit{circular security assumption}.
+
+For additional information about the security of FHE schemes, beyond what is necessary for understanding this thesis, we refer to Chapter VI in \cite{cite:QianFHE}.
+
+%\cite{cite:QianFHE}: IND-CPA and CIRCULAR SECURE (encrypting key), function privacy, circuit privacy...
+%\cite{cite:QianFHE}: security chapter...

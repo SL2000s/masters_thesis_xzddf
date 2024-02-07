@@ -1,0 +1,217 @@
+%%%%%%%% Basic Notations %%%%%%%%
+\section{Basic Notations}
+
+In this paper, the set of natural numbers $\mathbb{N}$ is defined as all non-negative numbers (including 0), while $\mathbb{N}^* := \mathbb{N}\backslash\{0\}$.
+
+$\mathcal{R} := \mathbb{Z}[X] / (X^N + 1)$ is a quotient ring of a polynomial ring $\mathbb{Z}[X]$ over the integers, modulo $(X^N + 1)$. If nothing else is specified, $N = 2^d$ for a $d \in \mathbb{N}^*$.
+
+$\mathcal{R}_Q := \mathcal{R} /  Q\mathcal{R} = \mathbb{Z}_Q[X] / (X^N + 1)$, where $\mathbb{Z}_Q := \mathbb{Z} /  Q \mathbb{Z}$. To specify the degree $N$ of the polynomial, $\mathcal{R}_{Q, N}$ is used.
+%For $a \in R$, $[a]_q$ refers to $a \mod q$ with coefficients in $(-q/2, q/2]$
+
+All vectors are bold, while elements in polynomial rings are not. The scalar product of two vectors $\mathbf{u}$ and $\mathbf{v}$ is denoted as $\langle \mathbf{u}, \mathbf{v} \rangle$.
+
+$\lfloor x \rfloor$, $\lceil x \rceil$ and $\lfloor x \rceil = \lfloor x + 1/2 \rfloor$ denote the floor function, the ceiling function, and the rounding function, respectively.
+%$\lfloor x \rfloor$ denotes the floor function, which outputs the greatest integer less than or equal to $x$, and $\lceil x \rceil$ denotes the ceiling function, i.e. the smallest integer greater than or equal to $x$. The rounding function is denoted as $\lfloor x \rceil := \lfloor x + 1/2 \rfloor$.
+
+$X \xleftarrow{\text{s}} \chi$ means that a random variable $X$ is sampled from a distribution $\chi$. For example, $X \xleftarrow{\text{s}} \mathcal{U}(S)$ denotes a sample $X$ that is uniformly drawn from a set $S$.
+
+%$\norm{r}$ of an element $r \in R$ is the euclidean norm of the coefficients
+
+
+
+%%%%%%%% Probability %%%%%%%%
+\section{Probability Theory}
+
+Marcolla et al. \cite{cite:QianFHE} define a negligible probability function in the following way.
+\begin{definition}[Negligible probability function]
+    A probability function \linebreak $\operatorname{negl}(x): \mathbb{Z} \to \mathbb{R}$ is called negligible if, for any $c \in \mathbb{Z}$, there exists an $N \in \mathbb{Z}$, such that $|\operatorname{negl}(x)| < 1/x^c$ for all $x > N$. 
+\end{definition}
+
+The opposite of a negligible probability function is an overwhelming probability function.
+\begin{definition}[Overwhelming probability function]
+    A probability function \linebreak $\operatorname{overwhelm(x)}: \mathbb{Z} \to \mathbb{R}$ is called an overwhelming probability function if and only if $1-\operatorname{overwhelm}(x)$ is a negligible probability function. 
+\end{definition}
+
+Now, $B$-boundedness can be defined similarly to the definition of Gentry et al. \cite{cite:gsw}.
+\begin{definition}[$B$-boundedness]
+    A distribution $\chi$, supported over integers, is called $B$-bounded if
+    $$\mathbb{P}_{X \xleftarrow{\text{s}} \chi}[|X| > B] = \operatorname{negl}(x),$$
+    where $\operatorname{negl}(x)$ is a negligible function.
+\end{definition}
+In other words, a distribution $\chi$ is $B$-bounded if the probability of sampling a value $X \xleftarrow{\text{s}} \chi$ greater than $B$ is negligibly small.
+
+Next, the discrete Gaussian distribution \cite{cite:discrete_gaussian} is defined.
+\begin{definition}[Discrete Gaussian distribution]
+    A discrete distribution $\mathcal{N}_{\mathbb{Z}}(\mu, \sigma^2)$, where $\mu \in \mathbb{Z}$ and $\sigma \in \mathbb{R}$, is called a discrete Gaussian distribution with center $\mu$ and scale $\sigma$, if it has the discrete probability function
+    $$\mathbb{P}_{X \xleftarrow{\text{s}} \mathcal{N}_{\mathbb{Z}}(\mu, \sigma^2)}[X=x] = \frac{e^{-(x-\mu)^2/(2\sigma^2)}}{ \sum_{y \in \mathbb{Z}} e^{-(y-\mu)^2/(2\sigma^2)} }.$$
+\end{definition}
+Note the similarity between the discrete Gaussian distribution $\mathcal{N}_{\mathbb{Z}}(\mu, \sigma^2)$ and the continous Gaussian (normal) distribution $\mathcal{N}(\mu, \sigma^2)$, where the later has the density function
+$$ \mathbb{P}_{X \xleftarrow{\text{s}} \mathcal{N}(\mu, \sigma^2)}[X=x] = \frac{1}{\sigma \sqrt{2 \pi}}e^{-\frac{1}{2} (\frac{x-\mu}{\sigma})^2}.$$
+
+%\begin{definition}[$B$-boundedness]
+%    An ensamble of distributions $\{\chi_n\}_{n \in \mathbb{N}}$, supported over integers, is called $B$-bounded if
+%    $$\mathbb{P}_{e \xleftarrow{\text{s}} \chi_n}[|e| > B] = \operatorname{negl}(n),$$
+%    where $\operatorname{negl}(n)$ is a negligible function.
+%\end{definition}
+
+%\begin{definition}[$B$-boundedness]
+%    A distribution $\chi$ is called $B$-bounded if it is supported on the interval $[-B, B]$.
+%\end{definition}
+
+
+
+%%%%%%%% Number Theory %%%%%%%%
+\section{Number Theory}
+
+To understand where the name fully homomorphic encryption comes from, a homomorphic function is defined.
+\begin{definition}[Homomorphic function]
+    A function $f: A \to B$ for two algebraic structures $A$ and $B$ of the same type is called homomorphic under the operation $\diamond$ if
+    $$f(x \diamond y) = f(x) \diamond f(y).$$
+\end{definition}
+%\begin{definition}[Homomorphic function]
+%    A function $f: A \to B$ for two algebraic structures $A$ and $B$ associated with two operations $\dot$ and $\operatorname{\odot}$, respectively, called homomorphic under operation if
+%    $$f(x \diamond y) = f(x) \diamond f(y)$$
+%\end{definition}
+
+Moreover, the mathematical structure torus is defined as follows.
+\begin{definition}[The real torus]
+    The mathematical structure consisting of the real numbers modulo 1 is denoted $\mathbb{T} := \mathbb{R} / \mathbb{Z}$ and is called the real torus.
+\end{definition}
+This means that the elements of the real torus can be represented by the interval $[0,1)$. Just as the reals, the torus has the addition operation, but the multiplication operation is not defined, and hence, it is not a ring \cite{cite:tfhe_guide}. To see why multiplication is not defined, take for example the element $\left[\frac{1}{3}\right] = \left[\frac{4}{3}\right] \in \mathbb{T}$. Then
+$$\left[\frac{1}{3}\right] \cdot \left[\frac{1}{3}\right] = \left[\frac{1}{9}\right] \neq \left[\frac{7}{9}\right] = \left[\frac{16}{9}\right] = \left[\frac{4}{3}\right] \cdot \left[\frac{4}{3}\right].$$
+However, multiplication between elements of the torus and integers is well-defined.
+
+
+
+%%%%%%%% Lattices %%%%%%%%
+\section{Lattices}
+Most FHE schemes rely on hard lattice problems. This section contains some theory about lattices.
+
+\begin{definition}[Lattice]
+For any two positive integers $k, n \in \mathbb{N}^*$ where $k \leq n$, let $B=(\mathbf{b}_1, ... , \mathbf{b}_k)$ be $k$ linearly independent vectors in $\mathbb{R}^n$. Then the $k$-dimensional lattice $\mathcal{L}$ generated by $B$ is defined as
+$$\mathcal{L} = \mathcal{L}(B) = \left\{ \sum_{i=1}^k \gamma_i \mathbf{b}_i : \; \gamma_i \in \mathbb{Z} \right\}.$$
+$B$ is called the base of the lattice, and $k$ is called the rank.
+\end{definition}
+
+Each lattice $\mathcal{L}$ is associated to a problem called the shortest vector problem, which is defined below.
+
+\begin{definition}[Shortest vector problem]\label{def:svp}
+Given a lattice $\mathcal{L}$ and a norm $\norm{\cdot}$ (usually the $L^2$ norm), the problem of finding
+$$\argmin_{\mathbf{v} \in \mathcal{L}\backslash\{\mathbf{0}\}} \norm{\mathbf{v}}$$
+is called the shortest vector problem $\mathsf{(SVP)}$.
+\end{definition}
+
+The shortest vector problem can be generalized to the closest vector problem.
+
+\begin{definition}[Closest vector problem]\label{def:cvp}
+Given a lattice $\mathcal{L}$, a norm $\norm{\cdot}$ (usually the $L^2$ norm), and a vector $\mathbf{t} \in \mathbb{R}^n$, the problem of finding
+$$\argmin_{\mathbf{v} \in \mathcal{L}} \norm{\mathbf{v}-\mathbf{t}}$$
+is called the closest vector problem $\mathsf{(CVP)}$. The expression $\min_{\mathbf{v} \in \mathcal{L}} \norm{\mathbf{v}-\mathbf{t}}$ is called the distance betwen $\mathbf{t}$ and $\mathcal{L}$, and is denoted by  $ \textnormal{dist}(\mathbf{t}, \mathcal{L}) := \min_{\mathbf{v} \in \mathcal{L}} \norm{\mathbf{v}-\mathbf{t}}$.
+\end{definition}
+
+There is also a problem called the short integer solution.
+\begin{definition}[Short integer solution]\label{def:sis}
+Let $q, m, n \in \mathbb{N}^*$ be three positive integers, and take a matrix $A \in \mathbb{Z}_q^{m \times n}$. Moreover, let $\beta \in \mathbb{R}$ be a real number such that $\beta < q$, and let $\norm{\cdot}$ be some norm. Then the problem of finding a non-zero vector $\mathbf{x} \in \mathbb{Z}^n \backslash \{\mathbf{0}\}$ such that
+\begin{enumerate}[label=(\roman{*}),labelsep=2em]
+\itemindent=140pt
+\item $\norm{\mathbf{x}} \leq \beta$ \label{misc:sis_norm_cond}
+\item $A \mathbf{x} \equiv \mathbf{0} \mod q,$ \label{misc:sis_eq}
+\end{enumerate}
+is called the short integer solution problem and is abbreviated $\mathsf{SIS}_{n,m,q,\beta}$.
+\end{definition}
+
+% Note that without condition \ref{misc:sis_norm_cond} in Definition \ref{def:sis}, it is easy to find a solution to \ref{misc:sis_eq} by simple Gaussian elimination. Moreover, $\beta < q$ is to avoid a solution like $\mathbf{x} = (q, 0, 0, ...)'$.
+
+%If SVP is hard in the worst case, then SIS is hard on average. [ Miklós Ajtai...]
+
+At last, a problem that partly relies on a version of the $\mathsf{SVP}$ problem is defined. See Marcolla et al. \cite{cite:QianFHE} for more details.
+\begin{definition}[Sparse subset sum problem]\label{def:sssp}
+Let $S = \{a_1, \dots, a_n\} \subseteq \mathbb{Z}$ be a set of integers. Then the problem of finding a subset $A \subseteq S$ such that
+$$\sum_{x \in A} x = 0$$
+is called the sparse subset sum problem $(\mathsf{SSSP})$.
+\end{definition}
+
+
+
+%%%%%%%% Lattice-based Cryptography %%%%%%%%
+\section{Lattice-Based Cryptography} %\section{Learning With Errors}
+
+This section gives an introduction to lattice-based cryptography.
+
+\subsection{Hard Problems}
+
+The modern lattice-based cryptosystems are usually based on the learning with errors ($\mathsf{LWE}$) problem. The $\mathsf{LWE}$ problem was introduced by Regev in 2005 \cite{cite:lwe_first}, and is defined below.
+
+\begin{definition}[Learning with errors problem]\label{def:lwe_prob}
+For two positive integers \linebreak $q,n \in \mathbb{N}^*$, let $\mathbf{a} \in \mathbb{Z}_q^n$, and $b \in \mathbb{Z}_q$. Then, the problem of finding a vector $\mathbf{s} \in  \mathbb{Z}_q^n$ such that
+$$ b = \langle \mathbf{a}, \mathbf{s} \rangle + e \mod q,$$
+for some sample $e \xleftarrow{\text{s}} \chi$ drawn from an error distribution $\chi$ over $\mathbb{Z}$, is called the learning with errors problem $(\mathsf{LWE})$.
+\end{definition}
+
+There is also a decisional version of the $\mathsf{LWE}$ problem.
+\begin{definition}[Decisional learning with errors problem]\label{def:dlwe_prob}
+For two positive integers $q,n \in \mathbb{N}^*$, and an error sample $e \xleftarrow{\text{s}} \chi$ drawn from an error distribution $\chi$ over $\mathbb{Z}$, the problem of distinguishing the tuple $(\mathbf{a}, b = \langle \mathbf{a}, \mathbf{s} \rangle + e \mod q) \in \mathbb{Z}_q^n \times \mathbb{Z}_q$ from a tuple uniformly chosen from $\mathbb{Z}_q^n \times \mathbb{Z}_q$ is called the decisional learning with errors problem $(\mathsf{DLWE})$.
+\end{definition}
+
+The $\mathsf{LWE}$ and the $\mathsf{DLWE}$ problems are reducible to each other \cite{cite:tfhe}, and the $\mathsf{LWE}$ problem can be reduced to the worst-case hardness of $\mathsf{SVP}$ \cite{cite:bv_lwe}.
+
+The $\mathsf{LWE}$ problem also has a ring-version.
+
+\begin{definition}[Ring learning with errors problem]\label{def:rlwe_prob}
+For two positive integers $Q,N \in \mathbb{N}^*$, let $\mathcal{R}_Q := \mathbb{Z}_Q[X] / (X^N + 1)$. Moreover, let $a, b \in \mathcal{R}_Q$. Then, the problem of finding a ring element $s  \in \mathcal{R}_Q$ such that
+$$b = a \cdot s + e,$$
+for some sample $e \xleftarrow{\text{s}} \chi$ drawn from an error distribution $\chi$ over $\mathcal{R}_Q$, is called the ring learning with errors problem $(\mathsf{RLWE})$.
+\end{definition}
+
+\begin{definition}[Decisional ring learning with errors problem]\label{def:drlwe_prob}
+For two positive integers $Q,N \in \mathbb{N}^*$, a ring $\mathcal{R}_Q := \mathbb{Z}_Q[X] / (X^N + 1)$, and an error sample $e \xleftarrow{\text{s}} \chi$ drawn from an error distribution $\chi$ over $\mathcal{R}_Q$, the problem of distinguishing the tuple $(a, b = a \cdot s + e) \in \mathcal{R}_Q \times \mathcal{R}_Q$ from a tuple uniformly chosen from $\mathcal{R}_Q \times \mathcal{R}_Q$ is called the decisional ring learning with errors problem $(\mathsf{DRLWE})$.
+\end{definition}
+
+At last, we will also define the decisional $\mathsf{NTRU}$ problem.
+% \begin{definition}[$\mathsf{NTRU}$ problem]\label{def:ntru_prob}
+% For two positive integers $Q,N \in \mathbb{N}^*$, let $\mathcal{R}_Q := \mathbb{Z}_Q[X] / (X^N + 1)$. Then, given $c \in \mathcal{R}_Q$, the problem of finding a ring element $f \in \mathcal{R}_Q$ such that
+% $$c = g \backslash f,$$
+% where $g \xleftarrow{\text{s}} \chi$  is a sample drawn from an error distribution $\chi$ over $\mathcal{R}_Q$ is called the $\mathsf{NTRU}$ problem.
+% \end{definition}
+
+\begin{definition}[Decisional $\mathsf{NTRU}$ problem]\label{def:dntru_prob}
+For two positive integers \linebreak $Q,N \in \mathbb{N}^*$, a ring $\mathcal{R}_Q := \mathbb{Z}_Q[X] / (X^N + 1)$, and an error sample $g \xleftarrow{\text{s}} \chi$ drawn from an error distribution $\chi$ over $\mathcal{R}_Q$, the problem of distinguishing $g  /  f \in \mathcal{R}_Q$ from a random polynomial uniformly drawn from $\mathcal{R}_Q$ is called the decisional $\mathsf{NTRU}$ problem.
+\end{definition}
+
+%\begin{definition}[Learning with errors problem]\label{def:lwe_prob}
+%Given a vector $\mathbf{b} \in \mathbb{Z}_q^m$ and a matrix $A \in \mathbb{Z}_q^{m \times n}$, the problem of finding a vector %$\mathbf{s} \in  \mathbb{Z}_q^n$ such that
+%$$A\mathbf{s} + \mathbf{e} = \mathbf{b} \mod q,$$
+%where $\mathbf{e} \in \mathbb{Z}_q^m$ is a sample drawn coordinate-wise from an error distribution $\chi$, is called the learning with %errors problem $(\mathsf{LWE})$.
+%\end{definition}
+
+% from \cite{cite:gsw}
+%\begin{definition}[Decisional $\mathsf{LWE}$ problem]\label{def:dlwe_prob}
+%Given a security parameter $\lambda$, let $n=n(\lambda) \in \mathbb{N}^*$ be the dimension, let $q = q(\lambda) > 2$ be an integer, and %let $\chi = \chi(\lambda)$ be a distribution over $\mathbb{Z}$. Consider two distributions, where the first one samples $(\mathbb{a}_i, b_i)$ uniformly random from $\mathbb{Z}_q^{n+1}$ and the second first draws $\mathbb{s} \in \mathbb{Z}_q^n$ uniformly random, and then samples $(\mathbb{a}_i, b_i) \mathbb{Z}_q^{n+1}$ where $\mathbb{a}_i \in \mathbb{Z}_q^n$ is uniformly random, $e_i$ is drawn form $\chi$ and $b_i = \langle \mathbb{a}_i , \mathbb{s}_i \rangle + e_i$. The problem of distinguishing the two distributions given a set of samples is called the decision version of the $\mathsf{LWE}_{n,q,\chi}$ problem, or shorter, the $\mathsf{DLWE}_{n,q,\chi}$ problem.
+
+
+\subsection{Encryption Algorithms}
+
+$\mathsf{LWE}$-based encryption can be written on the form defined below.
+\begin{definition}[LWE ciphertext]\label{def:lwe_encr}
+For two positive integers $q,n \in \mathbb{N}^*$, let \linebreak $m \in \mathbb{Z}_q$ be a message and let $\mathbf{a}, \mathbf{s} \in \mathbb{Z}_q^n$ be a public vector and a private key, respectively. Then the LWE encryption of $m$ is defined as
+$$\operatorname{LWE}_{q,\mathbf{s}}(m) = (\mathbf{a}, b = \langle \mathbf{a}, \mathbf{s} \rangle + \operatorname{noised}(m)) \in \mathbb{Z}_q^n \times \mathbb{Z}_q,$$
+where $\operatorname{noised}(m)$ is a noised encoding of $m$ using some noise $e \xleftarrow{\text{s}} \chi$ drawn from an error distribution $\chi$ over $\mathbb{Z}_q$. %The vector $\mathbf{s}$ is the private key.
+\end{definition}
+
+Regev \cite{cite:lwe_first} uses $\operatorname{noised}(m) = m \cdot \frac{q}{t} + e$, so that
+\begin{equation}\label{eq:regev_lwe}
+    \operatorname{LWE}_{q,\mathbf{s}}^{\text{Regev}}(m) = \left(\mathbf{a}, b = \langle \mathbf{a}, \mathbf{s} \rangle + m \cdot \frac{q}{t} + e\right).
+\end{equation}
+
+Note that knowing the private key $\mathbf{s}$, a ciphertext $\operatorname{LWE}_{q,\mathbf{s}}(m) = (\mathbf{a}, b)$ is easily decrypted:
+$$ \operatorname{noised}(m) = b - \langle \mathbf{a}, \mathbf{s} \rangle.$$
+
+It is also possible to encrypt using the $\mathsf{RLWE}$ problem.
+
+\begin{definition}[RLWE ciphertext]\label{def:rlwe_encr}
+For two positive integers $Q, N \in \mathbb{N}^*$, let $m, a, s \in \mathcal{R}_Q$, be a message, a public value, and a private key, respectively. Then the RLWE encryption of $m$ is defined as
+$$\operatorname{RLWE}_{Q,s}(m) = (a, b = a \cdot s + \operatorname{noised}(m)),$$
+where $\operatorname{noised}(m)$ is a noised encoding of $m$ using some noise $e \xleftarrow{\text{s}} \chi$ drawn from an error distribution $\chi$ over $\mathcal{R}_Q$.
+\end{definition}
+
+Encryption using the $\mathsf{NTRU}$ problem is defined in Chapter \ref{sec:xzddf_intro}.

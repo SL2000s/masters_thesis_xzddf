@@ -1,0 +1,109 @@
+\documentclass[11pt,twoside]{latex_config/eitExjobb}               % use when editing
+% \documentclass[11pt,oneside]{latex_config/eitExjobb_onlineprint}  % use for online publication
+% \documentclass[11pt,twoside,final]{latex_config/eitExjobb}        % use for print
+
+%% usepackages
+\input{latex_config/usepackages}
+
+%% latex declarations and commands
+\input{latex_config/commands}
+
+%% start document
+\begin{document}
+
+
+%%%%%%%% Title page %%%%%%%%
+\input{sections/title_page}
+
+
+%% prepare for preface chapters
+\frontmatter    %% Page numbering for front pages (small roman)
+\setlength{\parskip}{2,0 ex plus 0,5 ex minus 0,2 ex}
+\setlength{\parindent}{0 em}
+
+
+%%%%%%%% Abstract %%%%%%%%
+\chapter*{Abstract}
+\input{sections/abstract}
+
+
+%%%%%%%% Popular Science Summary %%%%%%%%
+%\chapter*{Popular Science Summary}
+%\input{sections/popular_science}
+
+
+%%%%%%%% Acknowledgements %%%%%%%%
+\chapter*{Preface}
+\input{sections/acknowledgements}
+
+
+%%%%%%%% Chapters, Figures, Tables, Algorithms %%%%%%%%
+\tableofcontents    % table
+\listofalgorithms   % algorithm list
+\listoffigures      % figure list
+\listoftables       % table list
+
+\chapter*{List of Abbreviations}
+\input{sections/abbreviations.tex}
+
+%% prepare for the main thesis
+\cleardoublepage
+\mainmatter         % Page numbering for the main thesis (Arabic)
+
+
+%%%%%%%% Introduction %%%%%%%%
+\chapter{Introduction}
+\input{sections/introduction}
+
+
+%%%%%%%% Mathematical Background %%%%%%%%
+\chapter{Preliminaries}\label{sec:preliminaries}
+\input{sections/background}
+
+
+%%%%%%%% Intro to FHE %%%%%%%%
+\chapter{Fully Homomorphic Encryption}\label{sec:fhe_intro}
+\input{sections/FHE_intro}
+
+
+%%%%%%%% Bootstrapping %%%%%%%%
+%\chapter{Bootstrapping}\label{sec:bootstrapping}
+%\input{sections/bootstrapping}
+
+
+%%%%%%%% Fast Bootstrapping %%%%%%%%
+\chapter{XZDDF Bootstrapping}\label{sec:xzddf_intro}
+\input{sections/fast_bootstrapping}
+
+\chapter{Modification of XZDDF Bootstrapping}\label{sec:xzddf_corr}
+\input{sections/corr_xzddf_bootstrapping}
+
+
+%%%%%%%% Efficiency Tests  %%%%%%%%
+\chapter{Efficiency Tests}\label{sec:efficiency_tests}
+\input{sections/efficiency_tests}
+
+
+%%%%%%%% Conclusions and Future Work  %%%%%%%%
+\chapter{Conclusions and Future Work}\label{sec:conclusions}
+\input{sections/conclusions}
+
+
+%%%%%%%% References %%%%%%%%
+\bibliographystyle{IEEEtran}
+\bibliography{refs}         % Entries are in the refs.bib file
+
+
+%% start appendix
+\appendix
+
+%%%%%%%% FHE Schemes %%%%%%%%
+\chapter{Fully Homomorphic Encryption Schemes}\label{sec:fhe_schemes}
+\input{sections/FHE_schemes}
+
+\chapter{Figures}\label{sec:appendix_figures}
+\input{sections/appendix_figures}
+
+
+
+\end{document}

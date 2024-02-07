@@ -1,0 +1,146 @@
+The third generation of FHE schemes started when the GSW scheme \cite{cite:gsw} was published in 2013  \cite{cite:QianFHE}. Just as the schemes in the second generation, third-generation schemes are based on the $\mathsf{LWE}$ and $\mathsf{RLWE}$ problems. However, an important difference is that the GSW scheme has a new approach for performing homomorphic operations, using a method called \textit{approximate eigenvector method} instead \cite{cite:QianFHE}.
+
+In this section, we will first briefly present how the GSW scheme encrypts and decrypts since all schemes in the third generation more or less are built on the basics of these techniques. Then we will describe the FHEW and the TFHE schemes, which also belong to the third-generation schemes but have taken care of some of the drawbacks of the GSW scheme.
+
+%%%%%%%% GSW scheme %%%%%%%%
+\subsection{GSW Scheme}\label{sec:gsw}
+
+A brief presentation of the GSW scheme, based on the simplified GSW scheme from Marcolla et al. \cite{cite:QianFHE}, can be found below.
+
+Firstly, choose a random private key $\mathbf{s} = (1, s_1, ..., s_{n-1}) \in \mathbb{Z}_q^n$, and let $A \in \mathbb{Z}_q^{n \times n}$ be the public key, chosen so that $A \cdot \mathbf{s} = \mathbf{e} \approx 0$.
+
+The encryption $C$ of a message $m \in \mathbb{Z}_q$ is then computed as $C = mI_n + RA$, where $I_n$ is the identity matrix and $R \in \mathbb{Z}_2^{n \times n}$ is randomly chosen matrix.
+
+To decrypt, one computes $C \mathbf{s} = m I_n \mathbf{s} + RA \mathbf{s} = m I_n \mathbf{s} + R \mathbf{e} \approx m I_n \mathbf{s}$, because both $R \in \mathbb{Z}_2^{n \times n}$ and $\mathbf{e}$ are small. Since, $m I_n \mathbf{s} = (ms_0, ..., ms_{n-1}) = (m, ms_1, ..., ms_{n-1})$, one simply outputs the first element of the vector $C \mathbf{s}$ as the decryption.
+
+The error when performing homomorphic computations grows slower in the GSW scheme than in second-generation schemes \cite{cite:QianFHE}. However, the ciphertexts are large compared to the plaintext, leading to high communication costs, and the time complexity of homomorphic operations is quite high.
+
+
+%%%%%%%% FHEW scheme %%%%%%%%
+\subsection{FHEW Scheme}\label{sec:fhew}
+
+Ducas and Micciancio \cite{cite:fhew} propose some improvements to the GSW scheme, calling the new scheme FHEW. It is provided with some new techniques to achieve fast bootstrapping. One is that it provides a method for homomorphically computing $\operatorname{NAND}$ with a very low noise growth. $\operatorname{NAND}$ is functionally complete, and therefore, any function can be represented as a circuit of $\operatorname{NAND}$ gates. In FHEW, a small refresh is performed on each output of a gate. We will now briefly describe how the $\operatorname{NAND}$ operation is performed on ciphertexts.
+
+The FHEW scheme from Ducas and Micciancio \cite{cite:fhew} encrypts with standard Regev LWE encryption (see (\ref{eq:regev_lwe}) and Definition \ref{def:lwe_encr}). Let $\mathsf{LWE}_{\mathbf{s}}^{t/q}(m,E) \subset \mathbb{Z}_q^{n+1}$ denote the set of LWE encryptions $c = (\mathbf{a}, b)$ of the message $m \in \{0,1\}$ under the private key $\mathbf{s} \in \mathbb{Z}_q^n$ such that the absolute value of the noise of ciphertext $c$ is less than $E$. Then, the homomorphic $\operatorname{NAND}$ operation described by Ducas and Micciancio~\cite{cite:fhew} is defined as:
+\begin{align*}
+    \operatorname{HomNAND}: \;\; &\mathsf{LWE}_{\mathbf{s}}^{4/q}(m_0, q/16) \times \mathsf{LWE}_{\mathbf{s}}^{4/q}(m_1, q/16) \to \mathsf{LWE}_{\mathbf{s}}^{2/q}(m_0 \barwedge m_1, q/4) \\
+    &((\mathbf{a_0}, b_0), (\mathbf{a_1}, b_1)) \mapsto \left(-\mathbf{a_0}-\mathbf{a_1}, \frac{5q}{8} - b_0 - b_1\right),
+\end{align*}
+
+where $\barwedge$ denotes the $\operatorname{NAND}$ operator. We see that one then needs to transform the output $c \in \mathsf{LWE}_{\mathbf{s}}^{2/q}(m, q/4)$ to a ciphertext $c' \in \mathsf{LWE}_{\mathbf{s}}^{4/q}(m, q/16)$ again. Using Gentry's bootstrapping technique \cite{cite:gentry1} as usual, one can do so by homomorphically decrypting $c$ under an encryption corresponding to $\mathsf{LWE}_{\mathbf{s}}^{4/q}(m, q/16)$.
+%We see that to avoid the noise from growing with the circuit depth, for each gate, one needs to transform the output $\mathbf{c} \in \mathsf{LWE}_{\mathbf{s}}^{2/q}(m, q/4)$ to a ciphertext $\mathbf{c}' \in \mathsf{LWE}_{\mathbf{s}}^{4/q}(m, q/16)$. Using Gentry's bootstrapping technique from \cite{cite:gentry1} as usual, one can do so by homomorphically decrypting $\mathbf{c}$ under an encryption corresponding to $\mathsf{LWE}_{\mathbf{s}}^{4/q}(m, q/16)$.
+
+As noted by Ducas and Micciancio \cite{cite:fhew}, the $\operatorname{NAND}$ operation itself is very fast -- what takes time is the bootstrapping afterwards.
+
+
+%%%%%%%% TFHE scheme %%%%%%%%
+\subsection{TFHE Scheme}\label{sec:tfhe}
+
+Chillotti, Gama, Georgieva, and Izabachène \cite{cite:tfhe} improve the FHEW scheme further by using the real torus $\mathbb{T}$ in different ways. They call the new technique TFHE, where 'T' stands for torus. In the paper, three versions of the TFHE scheme are proposed -- the TLWE scheme, based on a generalization of the $\mathsf{LWE}$ problem for the torus; the TRLWE scheme, which is the ring version of TLWE; and the TRGSW scheme, which is an improvement of the GSW scheme, based on rings and a torus. 
+
+In Algorithm \ref{alg:trlwe_setup} -- \ref{alg:trlwe_eval}, we present how the TRLWE scheme works. One can simply switch between TRLWE and TLWE by just changing $\mathcal{T}$ to the real torus $\mathbb{T}$, changing $R$ to $\mathbb{Z}$ and letting $\chi$ be $\{0,1\}$-bounded instead of $B$-bounded \cite{cite:QianFHE}.
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{TRLWE.Setup}$}\label{alg:trlwe_setup}
+\begin{algorithmic}
+\Require
+  \State $\lambda$ \Comment{security parameter}
+\Ensure $params$ \Comment{a tuple of parameters}
+  \State $k \gets k(\lambda) \in \mathbb{N}^*$
+  \State $N \gets 2^k$ \Comment{degree of ring}  
+  \State $\mathcal{R} \gets \mathbb{Z}[X]/(X^N+1)$
+  \State $\mathcal{T} \gets \mathbb{T}[X]/(X^N+1)$ \Comment{$= \mathbb{R}[X]/(X^N+1) \mod 1$}
+  \State $\mathcal{R}_2 \gets \mathbb{Z}_2[X]/(X^N+1)$ 
+  \State $n \gets n(\lambda)$ \Comment{dimension of ring}
+  \State $M \gets M(\lambda)$
+  \State $\chi \gets \chi(\lambda)$ \Comment{$B$-bounded distribution over $\mathcal{T}$}
+  \State $params \gets (\mathcal{R}, \mathcal{T}, \mathcal{R}_2, n, M, \chi)$ 
+\end{algorithmic}
+\end{algorithm}
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{TRLWE.KeyGen}$}\label{alg:trlwe_keygen}
+\begin{algorithmic}
+\Require
+  \State $params$
+\Ensure $(sk, pk)$ \Comment{private and public key pair}
+  \State $\mathbf{s} \xleftarrow{\text{s}} \mathcal{U}(\mathcal{R}_2^n)$ \Comment{choose a random private key}
+  \State $A \xleftarrow{\text{s}} \mathcal{U}(T^{M \times n})$
+  \State $\mathbf{e} \xleftarrow{\text{s}} \chi^M$
+  \State $D \gets (A \; || \; A\mathbf{s} + \mathbf{e}) \in \mathcal{T}^{M \times (n+1)}$
+  \State $sk \gets \mathbf{s}$
+  \State $pk \gets D$
+\end{algorithmic}
+\end{algorithm}
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{TRLWE.Enc}$}\label{alg:trlwe_enc}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $pk$
+  \State $m \in \mathcal{M} \subseteq \mathcal{T}$ \Comment{$\mathcal{M}$ is the message space}
+\Ensure $\mathbf{c} \in \mathcal{T}^{n+1}$
+  \State $D \gets pk$
+  \State $\mathbf{r} \xleftarrow{\text{s}} \mathcal{U}\left(\mathcal{R}_2^{M}\right)$
+  \State $\mathbf{m} \gets (0, ..., 0, m) \in \mathcal{T}^{n+1}$
+  \State $\mathbf{c} \gets  \mathbf{r}^T D + \mathbf{m} \in \mathcal{T}^{n+1}$
+\end{algorithmic}
+\end{algorithm}
+
+\renewcommand{\Comment}[2][.55\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{TRLWE.Dec}$}\label{alg:trlwe_dec}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $sk = \mathbf{s} \in \mathcal{R}_2^n$
+  \State $\mathbf{c} \in \mathcal{T}^{n+1}$
+\Ensure $m$
+  \State $\mathcal{T}^n \times \mathcal{T} \ni (\mathbf{a}, b) \gets \mathbf{c}$
+  \State $m \gets \operatorname{round}(b - \langle \mathbf{a}, \mathbf{s} \rangle)$ \Comment{round to nearest point in $\mathcal{M} \subseteq \mathcal{T}$}
+\end{algorithmic}
+\end{algorithm}
+
+\renewcommand{\Comment}[2][.51\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{TRLWE.Eval\_lincomb}$}\label{alg:trlwe_eval}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $\mathbf{c}_0, ..., \mathbf{c}_{p-1} \in \mathcal{T}^{n+1}$
+  \State $f_0, ..., f_{p-1} \in \mathcal{R}$ \Comment{coefficients for linear combination}
+\Ensure $c = \operatorname{Enc}\left(\sum\limits_{i=0}^{p-1} f_i \cdot (\operatorname{Dec}(\mathbf{c}_i)\right)$
+  \State $c \gets \sum\limits_{i=0}^{p-1} f_i \cdot \mathbf{c}_i$
+\end{algorithmic}
+\end{algorithm}
+
+
+$\mathsf{TRLWE.Setup}$ in Algorithm \ref{alg:trlwe_setup} describes how to set up the parameters used in the scheme. Algorithm \ref{alg:trlwe_keygen} then shows how to generate a private and a public key for the scheme. Similar to the BGV scheme, a matrix with $M$ rows is generated as the public key, and then the encryption in Algorithm \ref{alg:trlwe_enc} chooses some random rows of this matrix to form a ciphertext.
+
+We will now explain why the decryption in Algorithm \ref{alg:trlwe_dec} works. In the key generation (Algorithm \ref{alg:trlwe_keygen}), we compute
+$$D = (A \; || \; A\mathbf{s} + \mathbf{e}),$$
+and in the encryption (Algorithm \ref{alg:trlwe_enc}), we compute
+$$\mathbf{c} = \mathbf{r}^T D + (0, ..., 0, m).$$
+Therefore, for $(\mathbf{a}, b) = \mathbf{c}$ in the decryption (Algorithm \ref{alg:trlwe_dec}), we get
+\begin{align*}
+     & \mathbf{a} = \mathbf{r}^T A \\
+     & b = \mathbf{r}^T (A\mathbf{s} + \mathbf{e}) + m.
+\end{align*}
+This means, that the decryption algorithm outputs
+\begin{align*}
+    & b - \langle \mathbf{a}, \mathbf{s} \rangle \\
+    & = \mathbf{r}^T (A\mathbf{s} + \mathbf{e}) + m - \mathbf{r}^T A\mathbf{s} \\
+    & = \mathbf{r}^T \mathbf{e} + m \\
+    & \approx m,
+\end{align*}
+which is the plaintext message.
+
+The evaluation function in Algorithm \ref{alg:trlwe_eval} is simple but can only handle linear combinations of messages. This is a drawback of the TRLWE scheme (and the TLWE scheme). To evaluate a non-linear function on encrypted data, the TRGSW algorithm can be used instead \cite{cite:QianFHE}.
+
+One advantage of the TFHE scheme is that when bootstrapping, univariate functions can be evaluated at the same time. This is called programmable bootstrapping (PBS), and it means that with just one algorithm, we can both decrease the noise and evaluate a function of the ciphertext. Note that normal bootstrapping can also be seen as programmable bootstrapping with the identity function \cite{cite:tfhe_guide}, but usually, this is the only function that can be evaluated while refreshing.
+
+Micciancio and Polyakov \cite{cite_fhew_vs_tfhe} compare the FHEW scheme with the TFHE scheme, and the conclusion they draw is that the main performance difference between the schemes mainly is due to the different bootstrapping techniques. FHEW uses AP bootstrapping, while TFHE uses GINX (these are explained more in Section \ref{sec:bootstrapping}). This results in TFHE being faster for binary and ternary messages, while FHEW is better for larger secrets. On the other hand, TFHE has a smaller bootstrapping key than FHEW \cite{cite:QianFHE}.

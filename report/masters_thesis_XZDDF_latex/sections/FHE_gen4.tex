@@ -1,0 +1,167 @@
+The youngest generation of the FHE schemes is the fourth one. It was started by Cheon, Kim, Kim, and Song in 2017 \cite{cite:ckks} when they published a new kind of FHE scheme, nowadays called the CKKS scheme. Since then, a lot of improvements have been suggested, but the basics of the scheme are still the same. We will now describe how it works. 
+
+\subsection{CKKS Scheme}\label{sec:ckks}
+
+The original CKKS scheme, from Cheon et al. \cite{cite:ckks}, is a levelled fully homomorphic encryption scheme, but a bootstrapping technique was presented later by Cheon et al. \cite{cite:ckks_bootstrap}. The difference from previous schemes is that it only computes approximate results, allowing some errors in the last decimal places when evaluating functions. We will now describe how the scheme from Cheon et al. \cite{cite:ckks} works, using the presentation of it from Marcolla et al. \cite{cite:QianFHE}.
+
+
+Algorithm \ref{alg:ckks_setup} -- \ref{alg:ckks_eval} show pseudocode for the encryption scheme, consisting of $\mathcal{E}_{CKKS} = (\mathsf{CKKS.Setup, CKKS.KeyGen, CKKS.Enc, CKKS.Dec, CKKS.Eval})$.
+%$(\operatorname{CKKS.Setup}, \operatorname{CKKS.KeyGen}, \operatorname{CKKS.Enc}, \operatorname{CKKS.Dec}, \operatorname{CKKS.Eval})$
+
+$\mathcal{U}(S)$ is the uniform distribution of a set $S$, while $\mathcal{N}_{\mathbb{Z}}^N(0,\sigma^2)$ denotes a multi-dimensional discrete Gaussian distribution over $\mathbb{Z}^N$, where each component is sampled from independent discrete Gaussian distributions with variance $\sigma^2$.
+
+$\mathcal{Z}O_{\rho}$ is also a distribution, but over $\{ -1, 0, 1 \}$, and such that $\mathbb{P}[0] = 1-\rho$ and $\mathbb{P}[1] = \mathbb{P}[-1] = \rho/2$, where $0 < \rho < 1$.
+
+$\operatorname{HWT}(h, N)$ is a function that returns the set of signed binary vectors in $\{0, \pm 1 \}^N$ that has Hamming weight $h$, i.e. $h$ non-zero elements.
+
+We will now explain why the decryption in Algorithm \ref{alg:ckks_dec} works. In the key generation (Algorithm \ref{alg:ckks_keygen}), we set
+$$b = -as+e,$$
+so when encrypting (Algorithm \ref{alg:ckks_enc}), the outputted ciphertext is
+\begin{align*}
+    \mathbf{c} &= (v  b+m+e_0, v  a+e_1) \\
+    &= (-vas + ve + m + e_0, va + e_1).
+\end{align*}
+Then, since $\mathbf{s} = (1, s)$, the decryption algorithm outputs
+\begin{align*}
+    \langle &\mathbf{c}, \mathbf{s} \rangle \mod Q_j \\
+    &= \langle (-vas + ve + m + e_0, va + e_1), (1,s) \rangle \mod Q_j \\
+    &= -vas + ve + m + e_0 + vas + e_1s \mod Q_j \\
+    &= m + ve + e_0 + e_1s \mod Q_j \\
+    &\approx m,
+\end{align*}
+where the approximation at the last line can be made since the error terms are small.
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{CKKS.Setup}$}\label{alg:ckks_setup}
+\begin{algorithmic}
+\Require
+  \State $\lambda$ \Comment{security parameter}
+  \State $L$ \Comment{number of levels}
+\Ensure $params$ \Comment{a tuple of parameters}
+  \State $p \gets p(\lambda)$
+  \State $Q_0 \gets Q_0(\lambda)$
+  \For{$j=1 \; .. \; L$}
+    \State $Q_j \gets p^jQ_0$ \Comment{$\operatorname{level}(\mathbf{c}) = j \;\; \Longrightarrow \;\; \mathbf{c} \in \mathcal{R}_{Q_j}^2$}
+  \EndFor
+  \State $k \gets k(\lambda, Q_L) \in \mathbb{N}^*$
+  \State $N \gets 2^k$ %\Comment{Degree of ring}  
+  \State $\mathcal{R} \gets \mathbb{Z}[X]/(X^N+1)$
+  \State $t \gets t(\lambda, Q_L)$ \Comment{$t \in \mathbb{Z}$ is for $\mathsf{KeyGen}$}
+  \State $h \gets h(\lambda, Q_L)$ \Comment{Hamming weight for private key}
+%  \State $\mathcal{S}$
+  \State $\sigma \gets \sigma(\lambda, Q_L)$ \Comment{variance for sampled errors}
+%  \State $\mathcal{D}G(d,\sigma^2) \gets ((d,\sigma^2) \mapsto \mathcal{D}G_{d,\sigma^2})$ \Comment{Discrete Gaussians over $\mathbb{Z}^d$}
+%  \State $\mathcal{Z}O(\rho) \gets (\rho \mapsto \mathcal{Z}O_{\rho})$ \Comment{Distributions over $\{ -1, 0, 1 \}$}
+  %\State $\rho \gets 1/2$ %\Comment{$0 < \rho < 1$}
+%  \State $\chi \gets \chi(\lambda)$ \Comment{$B$-bounded distribution}
+%  \State $params \gets (d, \mathcal{R}, t, \{Q_j\}_{j=0}^L, \sigma, \mathcal{D}G(\cdot, \cdot), \mathcal{Z}O(\cdot), \chi)$
+  \State $params \gets (\{Q_j\}_{j=0}^L, \mathcal{R}, N, t, h, \sigma)$
+\end{algorithmic}
+\end{algorithm}
+
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{CKKS.KeyGen}$}\label{alg:ckks_keygen}
+\begin{algorithmic}
+\Require
+  \State $params$
+\Ensure $(sk, pk, evk)$ \Comment{private, public, and eval. key}
+%  \State $s \xleftarrow{\text{s}} \chi$
+  \State $\mathcal{R} \ni s \xleftarrow{\text{s}} \mathcal{U}(\operatorname{HWT}(h, N))$ \Comment{random vector is coefficients} %\Comment{$s \in \mathcal{R}$ ($\operatorname{HWT}$ gives coefficients)}
+  \State $a \xleftarrow{\text{s}} \mathcal{U}(\mathcal{R}_{Q_L})$
+  \State $\mathcal{R} \ni e \xleftarrow{\text{s}} \mathcal{N}_{\mathbb{Z}}^N(0,\sigma^2)$ \Comment{random vector is coefficients}
+  \State $b \gets -as+e \mod Q_L$
+  \State $a' \xleftarrow{\text{s}} \mathcal{U}(\mathcal{R}_{t \cdot Q_L})$
+  \State $ \mathcal{R} \ni e' \xleftarrow{\text{s}} \mathcal{N}_{\mathbb{Z}}^N(0,\sigma^2)$ \Comment{random vector is coefficients}
+  \State $b' \gets -a's+e'+ts^2 \mod (t \cdot Q_L)$  
+  \State $sk \gets (1,s)$ \Comment{$sk \in \mathcal{R}^2$}
+  \State $pk \gets (b,a)$ \Comment{$pk \in \mathcal{R}_{Q_L}^2$}
+  \State $evk \gets (b', a')$ \Comment{$evk \in \mathcal{R}_{t \cdot Q_L}^2$}
+\end{algorithmic}
+\end{algorithm}
+
+
+\renewcommand{\Comment}[2][.5\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{CKKS.Enc}$}\label{alg:ckks_enc}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $pk$
+  \State $m \in \mathcal{R}$
+\Ensure $\mathbf{c} \in \mathcal{R}_{Q_L}^2$
+  \State $v \xleftarrow{\text{s}} \mathcal{Z}O(1/2)$
+  \State $\mathcal{R} \ni e_0, e_1 \xleftarrow{\text{s}} \mathcal{N}_{\mathbb{Z}}^N(0,\sigma^2)$ \Comment{random vector is coefficients}
+  \State $(b,a) \gets pk \in \mathcal{R}_{Q_L}^2$
+  \State $\mathbf{c} \gets (v  b+m+e_0, v  a+e_1)$
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\renewcommand{\Comment}[2][.55\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{CKKS.Dec}$}\label{alg:ckks_dec}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $sk = \mathbf{s} \in \mathcal{R}^2$
+  \State $j$  \Comment{level of $\mathbf{c}$}
+  \State $\mathbf{c} \in \mathcal{R}_{Q_j}^2$
+\Ensure $m$
+  %\State $(a, b) \gets \mathbf{c}$
+  \State $m \gets \langle \mathbf{c}, \mathbf{s} \rangle \mod Q_j$ \Comment{$m \in \mathcal{R}$}
+\end{algorithmic}
+\end{algorithm}
+
+
+\renewcommand{\Comment}[2][.40\linewidth]{\leavevmode\hfill\makebox[#1][l]{//~#2}}  %% https://tex.stackexchange.com/questions/180212/how-to-align-comments-in-algorithm-code
+\begin{algorithm}[ht]
+\caption{\;\;$\mathsf{CKKS.Eval}$}\label{alg:ckks_eval}
+\begin{algorithmic}
+\Require
+  \State $params$
+  \State $evk$
+  \State $\mathbf{c}_0, ..., \mathbf{c}_{p-1}$
+  \State $f$ \Comment{function to evaluate}
+\Ensure $\mathbf{c}' = \mathsf{Enc}(f(\mathsf{Dec}(\mathbf{c}_0), ..., \mathsf{Dec}(\mathbf{c}_{p-1})))$
+  \State
+  \State \textbf{Function} rescale($\mathbf{c}, l, l'$)
+    \State \;\; $\mathbf{c}' \gets \left \lfloor \frac{Q_{l'}}{Q_l}\mathbf{c} \right \rceil \mod Q_{l'}$
+    \State \;\; $\textbf{Return } \mathbf{c}'$
+  \State \textbf{End Function}
+  \State
+  \State \textbf{Function} same\_level($\mathbf{c}_0, \mathbf{c}_1$)
+    \State \;\; $l_0 \gets \operatorname{level}(\mathbf{c}_0)$
+    \State \;\; $l_1 \gets \operatorname{level}(\mathbf{c}_1)$
+    \State \;\; \textbf{if} $l_0 < \ l_1$ \textbf{then}
+    \State \;\;\;\;\; $\mathbf{c}_0 \gets \operatorname{rescale}(\mathbf{c}_0, l_0, l_1)$
+    \State \;\;\;\;\; $l_0 \gets l_1$
+    \State \;\; \textbf{else if} $l_0 > l_1$ \textbf{then}
+    \State \;\;\;\;\; $\mathbf{c}_1 \gets \operatorname{rescale}(\mathbf{c}_1, l_1, l_0)$
+    \State \;\; \textbf{endif}
+    \State \;\; $\textbf{Return } (\mathbf{c}_0, \mathbf{c}_1, l_0)$
+  \State \textbf{End Function}
+  \State
+  \State \textbf{Function} add($\mathbf{c}_0, \mathbf{c}_1, params$)
+    \State \;\; $(\mathbf{c}_0, \mathbf{c}_1, l) \gets \operatorname{same\_level}(\mathbf{c}_0, \mathbf{c}_1)$ \Comment{ $ \implies \operatorname{level}(\mathbf{c}_0) = \operatorname{level}(\mathbf{c}_1)$}
+    \State \;\;  $\mathbf{c}_{\text{add}} \gets \mathbf{c}_0 + \mathbf{c}_1 \mod Q_l$
+    \State \;\; $\textbf{Return } \mathbf{c}_{\text{add}}$
+  \State \textbf{End Function}
+  \State
+  \State \textbf{Function} mult($\mathbf{c}_0, \mathbf{c}_1, params, evk$)
+    \State \;\; $(\mathbf{c}_0, \mathbf{c}_1, l) \gets \operatorname{same\_level}(\mathbf{c}_0, \mathbf{c}_1)$
+    \State \;\; $(b_0, a_0) \gets \mathbf{c}_0$
+    \State \;\; $(b_1, a_1) \gets \mathbf{c}_1$
+    \State \;\; $(d_0, d_1, d_2) \gets (b_0b_1, a_0b_1+a_1b_0, a_0a_1)) \mod Q_l$
+    \State \;\; $\mathbf{c}_{\text{mult}} = (d_0, d_1) + \lfloor t^{-1} \cdot d_1 \cdot evk \rceil \mod Q_l$
+    \State \;\; $\textbf{Return } \mathbf{c}_{\text{mult}}$
+  \State \textbf{End Function}
+  \State
+  \State Use $\operatorname{add}()$ and $\operatorname{mult}()$ to compute the circuit $f$ on  $\mathbf{c}_0, ..., \mathbf{c}_{p-1}$ and output the result to $\mathbf{c}'$.
+\end{algorithmic}
+\end{algorithm}
+
+One last note about CKKS is that there are some attacks on it, for example from Li and Micciancio \cite{cite:ckks_attack}. As Marcolla et al. \cite{cite:QianFHE} mention, it is possible to extract the private key by just knowing a ciphertext and its corresponding plaintext. Since the error is a linear combination of the components of the key, one can compute the key with just some basic linear algebra.

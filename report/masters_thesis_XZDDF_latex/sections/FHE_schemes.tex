@@ -1,0 +1,28 @@
+Fully homomorphic encryption schemes are usually divided into four generations. The first generation started in 2009 when Gentry \cite{cite:gentry1} proposed the first FHE scheme. Since then, a bunch of other schemes have been invented, and this chapter will present some of the more common ones.
+
+%%%%%%%% First Generation %%%%%%%%
+\section{First Generation}
+\input{sections/FHE_gen1}
+
+%%%%%%%% Second Generation %%%%%%%%
+\section{Second Generation}
+\input{sections/FHE_gen2}
+
+%%%%%%%% Second Generation %%%%%%%%
+\section{Third Generation}
+\input{sections/FHE_gen3}
+
+%%%%%%%% Second Generation %%%%%%%%
+\section{Fourth Generation}
+\input{sections/FHE_gen4}
+
+
+\section{Comparison}
+Marcolla et al. \cite{cite:QianFHE} conclude that BGV and B/FV are good choices if working with finite fields and exact modular arithmetic. However, if bootstrapping will be needed, or if non-linear functions need to be evaluated, third and fourth-generation schemes are better instead. TFHE and other third-generation schemes are usually suitable when performing bit-wise operations or evaluating Boolean circuits, while CKKS is a good choice when doing real number arithmetic. At last, second and fourth-generation schemes are usually good when doing vector or matrix computations, since these schemes are provided with packing techniques. %However, second and third-generation schemes are supposed to be best when levelled homomorphic encryption is enough since their bootstrapping is quite inefficient. ... but faster with XZDDF?
+
+%\cite{cite:QianFHE}: "The second generation schemes, BGV and B/FV, are suitable to work with finite fields in the modular exact arithmetic. They are equipped with efficient packing which enables the use of SIMD (namely, single instruction multiple data) instructions to perform computations over vectors of integers (i.e. batching). Thus, these schemes are excellent candidates when large arrays of numbers are to be processed simultaneously. Second-generation schemes are not good candidates for circuits where bootstrapping is required (i.e. circuits with large multiplicative depth), or where non-linear functions are to be implemented. Third-generation schemes should be adopted instead, namely TFHE, which can outperform previous schemes for bit-wise operations, i.e. when computations are expressed as boolean circuits [58]. The main limitation of TFHE is the lack of support for CRT packing (i.e. batching), hence the scheme can be outperformed by previous approaches when processing large amounts of data simultaneously. The fourth generation, i.e. CKKS, is the best option for real numbers arithmetic. "
+
+%See table 1 in \cite{qian}!!!
+
+%\cite{cite:QianFHE} (end): "Second and fourth generation schemes are equipped with packing techniques, which make them efficient for matrix multiplication, while third generation schemes are the only ones to enable efficient evaluation of non-linear functions. Moreover, second and fourth-generation schemes are not equipped with fast bootstrapping techniques; this limits their application to their leveled version, not their fully homomorphic version. Another limitation is the absence of thorough efforts related to noise analysis, mainly for second-generation schemes. "
+
